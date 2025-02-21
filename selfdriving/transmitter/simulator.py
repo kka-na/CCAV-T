@@ -4,7 +4,6 @@ import math
 import sys
 import rospy
 from geometry_msgs.msg import PoseWithCovarianceStamped, Quaternion
-from visualization_msgs.msg import Marker
 
 def signal_handler(sig, frame):
     sys.exit(0)
@@ -49,7 +48,6 @@ class Simulator:
     
     def set_protocol(self):
         rospy.Subscriber('/initialpose', PoseWithCovarianceStamped, self.init_pose_cb)
-        self.lh_test_pub = rospy.Publisher('/lh', Marker, queue_size=1)
         self.simulator_pub = rospy.Publisher('/simulator/inform', Quaternion, queue_size=1)
 
     def init_pose_cb(self, msg):
@@ -71,28 +69,14 @@ class Simulator:
 
         self.actuator['accel']= accel
         self.actuator['brake'] = brake
-        self.publish_lh(msg[2])
-    
-    def publish_lh(self, point):
-        marker = Marker()
-        marker.type = Marker.SPHERE
-        marker.action = Marker.ADD
-        marker.header.frame_id = 'world'
-        marker.ns = 'lookahead'
-        marker.id = 1
-        marker.lifetime = rospy.Duration(0)
-        marker.scale.x = 2
-        marker.scale.y = 2
-        marker.scale.z = 2
-        marker.color.r = 1
-        marker.color.g = 0
-        marker.color.b = 1
-        marker.color.a = 1
-        marker.pose.position.x = point[0]
-        marker.pose.position.y = point[1]
-        marker.pose.position.z = 1.0
-        self.lh_test_pub.publish(marker)
-  
+
+        quat = Quaternion()
+        quat.x = self.car['x']
+        quat.y = self.car['y']
+        quat.z = self.car['v']
+        quat.w = self.car['t']
+        self.simulator_pub.publish(quat)
+
     def set_ego(self, map):
         if map == 'Pangyo':
             self.ego = Vehicle(-10.687, 0.029, -3.079)
@@ -124,9 +108,3 @@ class Simulator:
         dt = 0.05
         self.car['x'], self.car['y'], yaw, self.car['v'] = self.ego.next_state(dt, self.actuator)
         self.car['t'] = math.degrees(yaw)
-        quat = Quaternion()
-        quat.x = self.car['x']
-        quat.y = self.car['y']
-        quat.z = self.car['v']
-        quat.w = self.car['t']
-        self.simulator_pub.publish(quat)

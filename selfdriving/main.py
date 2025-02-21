@@ -2,15 +2,16 @@
 import rospy
 import sys
 import signal
+import asyncio
 
 import setproctitle
 setproctitle.setproctitle("self_driving")
 
 from ros_manger import ROSManager
 from control.control import Control
+from transmitter.main import Transmitter
 import selfdriving_helper as sdhelper
 
-from transmitter.simulator import Simulator
 
 def signal_handler(sig, frame):
     sys.exit(0)
@@ -19,29 +20,31 @@ class SelfDriving():
     def __init__(self, type,car, map):
         self.RM = ROSManager(type)
         self.ct = Control(car)
-        self.set_values(type, car, map)
+        self.tm = Transmitter(car, map)
+        self.set_values()
     
-    def set_values(self, type, car, map):
+    def set_values(self):
         self.car = None
         self.local_path = None
-        if car == 'simulator':
-            self.tm = Simulator(type, map, 1)
 
     def update_values(self):
         self.car = self.RM.car
         self.local_path = sdhelper.upsample_path_1m(self.RM.local_path)
         self.ct.update_value(self.RM.target_velocity, self.car, self.local_path)
         
-    def execute(self):
-        rate = rospy.Rate(20)
+    async def control(self):
         while not rospy.is_shutdown():
             self.update_values()
             if self.local_path is not None:
                 actuator = self.ct.execute()
-                self.tm.set_actuator(actuator)
-                self.tm.execute()
-                self.RM.publish()
-            rate.sleep()
+                self.tm.target.set_actuator(actuator)
+            await asyncio.sleep(0.1) #10hz 
+
+    def execute(self):
+        loop = asyncio.get_event_loop()
+        control = loop.create_task(self.control())
+        transmitter = loop.create_task(self.tm.transmitter())
+        loop.run_forever()
 
 def main():
     signal.signal(signal.SIGINT, signal_handler)
