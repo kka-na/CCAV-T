@@ -25,7 +25,7 @@ class Control():
         return config
     
     def set_values(self):
-        self.max_velocity = 10/3.6
+        self.max_velocity = 0
         self.target_velocity = 0
         self.state = 0
         self.current_location = Point(x=0, y=0)

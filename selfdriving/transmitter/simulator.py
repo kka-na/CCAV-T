@@ -76,6 +76,9 @@ class Simulator:
         quat.z = self.car['v']
         quat.w = self.car['t']
         self.simulator_pub.publish(quat)
+    
+    def set_user_input(self, msg):
+        pass
 
     def set_ego(self, map):
         if map == 'Pangyo':
@@ -108,3 +111,6 @@ class Simulator:
         dt = 0.05
         self.car['x'], self.car['y'], yaw, self.car['v'] = self.ego.next_state(dt, self.actuator)
         self.car['t'] = math.degrees(yaw)
+    
+    def cleanup(self):
+        pass
