@@ -7,22 +7,37 @@ import rospy
 
 class Avante():
     def __init__(self):
-        self.bus = can.ThreadSafeBus(interface='socketcan', channel='can0', bitrate=500000)
-        self.dbc = cantools.database.load_file('./dbc/cn7.dbc')
+        try:
+            self.bus = can.ThreadSafeBus(interface='socketcan', channel='can0', bitrate=500000)
+        except Exception as e:
+            print("No CAN")
+        self.dbc = cantools.database.load_file('./transmitter/dbc/cn7.dbc')
         self.setup_message_dicts()
         self.setup_encode_handler()
 
         self.current_velocity = 0.0
         self.alive_cnt = -1
+        self.state = 0
 
     def set_actuator(self, msg):
-        self.EAIT_Control_02['EPS_Cmd'] = msg[1]
-        self.EAIT_Control_02['ACC_Cmd'] = msg[0]
+        if self.state == 1:
+            self.EAIT_Control_02['ACC_Cmd'] = msg[0]
+            self.EAIT_Control_02['EPS_Cmd'] = msg[1]
+        else:
+            self.EAIT_Control_02['ACC_Cmd'] = -2
     
     def set_user_input(self, msg):
-        state = int(msg['state'])
-        self.EAIT_Control_01['EPS_En'] = state
-        self.EAIT_Control_01['ACC_En'] = state
+        self.state = int(msg['state'])
+        self.EAIT_Control_01['EPS_En'] = self.state
+        self.EAIT_Control_01['ACC_En'] = self.state
+        if int(msg['signal']) == 1:
+            self.Control['Turn_Signal'] = 2
+        elif int(msg['signal']) == 2:
+            self.Control['Turn_Signal'] = 4
+        elif int(msg['signal']) == 4:
+            self.Control['Turn_Signal'] = 1
+        else:
+            self.Control['Turn_Signal'] = 0
 
     def update_alive_cnt(self):
         self.alive_cnt += 1

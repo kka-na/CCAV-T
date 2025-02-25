@@ -14,7 +14,7 @@ class ROSManager:
     def set_values(self):
         self.car = {'state':0, 'x': 0, 'y':0,'t':0,'v':0}
         self.local_path = []
-        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 10/3.6}
+        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 0}
 
     def set_protocol(self):
         rospy.Subscriber(f'/{self.type}/EgoShareInfo', ShareInfo, self.ego_share_info_cb)

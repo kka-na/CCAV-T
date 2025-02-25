@@ -59,7 +59,7 @@ class Simulator:
         self.ego.set(x, y, yaw)
 
     def set_actuator(self, msg):
-        self.actuator['steer'] = msg[1]
+        self.actuator['steer'] = math.radians(msg[1])
         if msg[0] > 0:
             accel = msg[0]
             brake = 0

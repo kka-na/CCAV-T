@@ -31,10 +31,7 @@ class PurePursuit(object):
         heading = math.radians(current_heading)
         
         steering_angle = 0.
-        if len(route) < 1 :
-            lh_point = current_location
-        else:
-            lh_point = route[-1]
+
         for i, path_point in enumerate(route):
             diff = path_point - point
             rotated_diff = diff.rotate(-heading)
@@ -43,7 +40,6 @@ class PurePursuit(object):
                 if dis >= lfd:
                     theta = rotated_diff.angle
                     steering_angle = np.arctan2(2*self.wheelbase*np.sin(theta), lfd*self.lfd_offset)
-                    lh_point = path_point
                     break
 
         steering_angle = math.degrees(steering_angle)
@@ -51,4 +47,5 @@ class PurePursuit(object):
         if current_velocity * MPS_TO_KPH > 30:
             steering_angle = steering_angle * steer_offset
 
-        return math.radians(steering_angle), [lh_point.x, lh_point.y]
+        steer = np.clip(steering_angle*self.steer_ratio, -500, 500)
+        return steer
