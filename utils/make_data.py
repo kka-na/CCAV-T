@@ -36,8 +36,8 @@ class MakeData:
             with open(self.csv_file, mode='w', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow(["state", "x", "y", "car_heading", "car_velocity",
-                                 "lateral_acc", "longitudinal_acc", "packet_rate",
-                                 "rtt", "speed", "car_distance"])
+                                 "lateral_acc", "longitudinal_acc", "pitch_rate", "roll_rate", "yaw_rate", "packet_rate",
+                                 "rtt", "speed", "delay", "car_distance"])
 
     def set_values(self):
 
@@ -46,7 +46,8 @@ class MakeData:
         self.car_velocity = 0
         self.car_state = 0
         self.car_accel = [0,0] #lat, long
-        self.comm_perform = [0,0,0] #packet rate, rtt, speed
+        self.car_rotation = [0,0,0]
+        self.comm_perform = [0,0,0, 0] #packet rate, rtt, speed, delay
         self.car_distance = 0
 
     def set_protocols(self, type):
@@ -62,22 +63,23 @@ class MakeData:
 
     def novatel_corrimu_cb(self, msg: CORRIMU):
         self.car_accel = [msg.lateral_acc, msg.longitudinal_acc]
+        self.car_rotation = [msg.pitch_rate, msg.roll_rate, msg.yaw]
     
     def communication_performance_cb(self, msg:Float32MultiArray):
-        self.comm_perform = [msg.data[5], msg.data[2], msg.data[3]]
+        self.comm_perform = [msg.data[5], msg.data[2], msg.data[3], msg.data[7]]
         self.car_distance = msg.data[6]
 
     def write_to_csv(self):
         with open(self.csv_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([self.car_state, self.car_pos[0], self.car_pos[1], self.car_heading,
-                             self.car_velocity, self.car_accel[0], self.car_accel[1],
-                             self.comm_perform[0], self.comm_perform[1], self.comm_perform[2],
+                             self.car_velocity, self.car_accel[0], self.car_accel[1], self.car_rotation[0], self.car_rotation[1], self.car_rotation[2],
+                             self.comm_perform[0], self.comm_perform[1], self.comm_perform[2], self.comm_perform[3],
                              self.car_distance])
             
     def execute(self):
         signal.signal(signal.SIGINT, signal_handler)
-        rate = rospy.Rate(1)
+        rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             self.write_to_csv()
             rate.sleep()

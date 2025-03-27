@@ -1,5 +1,7 @@
 #!/usr/bin/python
 import tf
+import asyncio
+
 import math
 import sys
 import rospy
@@ -41,7 +43,6 @@ class Simulator:
         self.car = {'state':0, 'x': 0, 'y':0,'t': 0,'v': 0}
         self.actuator = {'steer': 0, 'accel': 0, 'brake': 0}
         self.obstacles = []
-
         self.set_ego(map)
 
         self.set_protocol()
@@ -66,7 +67,7 @@ class Simulator:
         else:
             accel = 0
             brake = -msg[0]
-
+        
         self.actuator['accel']= accel
         self.actuator['brake'] = brake
 
@@ -75,6 +76,7 @@ class Simulator:
         quat.y = self.car['y']
         quat.z = self.car['v']
         quat.w = self.car['t']
+
         self.simulator_pub.publish(quat)
     
     def set_user_input(self, msg):
@@ -107,7 +109,7 @@ class Simulator:
                 self.obstacles = [[1605.827, -1178.705, -0.711, -13, 1]]
                     
     
-    def execute(self):
+    async def execute(self):
         dt = 0.05
         self.car['x'], self.car['y'], yaw, self.car['v'] = self.ego.next_state(dt, self.actuator)
         self.car['t'] = math.degrees(yaw)

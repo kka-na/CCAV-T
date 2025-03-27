@@ -526,6 +526,11 @@ p, li { white-space: pre-wrap; }
           <number>0</number>
          </property>
          <widget class="QWidget" name="tab_4">
+          <property name="font">
+           <font>
+            <pointsize>9</pointsize>
+           </font>
+          </property>
           <property name="styleSheet">
            <string notr="true">background-color: rgb(238, 238, 236);</string>
           </property>
@@ -538,12 +543,12 @@ p, li { white-space: pre-wrap; }
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                <horstretch>0</horstretch>
-               <verstretch>1</verstretch>
+               <verstretch>2</verstretch>
               </sizepolicy>
              </property>
              <property name="font">
               <font>
-               <pointsize>9</pointsize>
+               <pointsize>8</pointsize>
               </font>
              </property>
              <property name="autoFillBackground">
@@ -551,6 +556,18 @@ p, li { white-space: pre-wrap; }
              </property>
              <property name="styleSheet">
               <string notr="true">background-color: rgb(238, 238, 236);</string>
+             </property>
+             <property name="showGrid">
+              <bool>true</bool>
+             </property>
+             <property name="gridStyle">
+              <enum>Qt::SolidLine</enum>
+             </property>
+             <property name="sortingEnabled">
+              <bool>false</bool>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
              </property>
              <attribute name="horizontalHeaderMinimumSectionSize">
               <number>30</number>
@@ -589,6 +606,11 @@ p, li { white-space: pre-wrap; }
              </row>
              <row>
               <property name="text">
+               <string>Delay (ms)</string>
+              </property>
+             </row>
+             <row>
+              <property name="text">
                <string>Packet Size (byte)</string>
               </property>
              </row>
@@ -602,7 +624,7 @@ p, li { white-space: pre-wrap; }
                <string>Performance</string>
               </property>
              </column>
-             <item row="5" column="0">
+             <item row="6" column="0">
               <property name="text">
                <string/>
               </property>
@@ -619,7 +641,7 @@ p, li { white-space: pre-wrap; }
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                <horstretch>0</horstretch>
-               <verstretch>4</verstretch>
+               <verstretch>7</verstretch>
               </sizepolicy>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_11">
@@ -665,6 +687,30 @@ p, li { white-space: pre-wrap; }
                 </property>
                 <property name="text">
                  <string>Transmit Speed</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QVBoxLayout" name="DelayLayout"/>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_7">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="font">
+                 <font>
+                  <pointsize>9</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Delay</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignCenter</set>

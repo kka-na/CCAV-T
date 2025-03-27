@@ -21,7 +21,7 @@ class PurePursuit(object):
 
     def execute(self, current_location, state, local_path, current_heading, current_velocity):
         if len(current_location) < 1 or state < 1:
-            return 0, [0,0]
+            return 0
         
         lfd = self.lfd_gain * current_velocity * MPS_TO_KPH
         lfd = np.clip(lfd, self.min_lfd, self.max_lfd)
@@ -46,6 +46,5 @@ class PurePursuit(object):
         steer_offset = min(max(current_velocity * MPS_TO_KPH * 0.02 + 0.1, 1), 2.2)
         if current_velocity * MPS_TO_KPH > 30:
             steering_angle = steering_angle * steer_offset
-
         steer = np.clip(steering_angle*self.steer_ratio, -500, 500)
         return steer

@@ -18,6 +18,7 @@ class SharingInformation(Structure):
     _fields_ = [
         ("tx_cnt", c_uint32),
         ("tx_cnt_from_rx", c_uint32),
+        ("timestamp", c_uint64)
         ("state", c_uint8),
         ("signal", c_uint8),
         ("latitude", c_float),

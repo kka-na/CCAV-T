@@ -25,7 +25,8 @@ class SocketHandler:
             'mbps': 0,
             'packet_size': 0,
             'packet_rate': 0,
-            'distance': 0
+            'distance': 0,
+            'delay' : 0,
         }
         self.rtt_ts_list = []
         self.tx_message = ""
@@ -100,6 +101,7 @@ class SocketHandler:
         p_share_info = cast(addressof(p_dummy.contents.data), POINTER(SharingInformation))
         p_share_info.contents.tx_cnt = socket.htonl(self.tx_cnt)
         p_share_info.contents.tx_cnt_from_rx = socket.htonl(self.tx_cnt_from_rx)
+        p_share_info.contents.timestamp = int(time.time()*1000)
         p_share_info.contents.state = state[0]
         p_share_info.contents.signal = state[1]
         p_share_info.contents.latitude = state[2]
@@ -171,7 +173,8 @@ class SocketHandler:
             sharing_information = tlvc.data
             self.set_rx_values(sharing_information)
             self.tx_cnt_from_rx = socket.ntohl(sharing_information.tx_cnt)
-            self.calc_rtt( socket.ntohl(sharing_information.tx_cnt_from_rx))
+            self.calc_rtt(socket.ntohl(sharing_information.tx_cnt_from_rx))
+            self.calc_delay(sharing_information.timestamp)
             obstacles = []
             for i in range(socket.ntohs(sharing_information.obstacle_num)):
                 ofs = tlvc_ofs+sizeof(V2x_App_SI_TLVC)+(i*sizeof(ObstacleInformation))
@@ -201,7 +204,7 @@ class SocketHandler:
                 self.communication_performance['rtt'] = rtt
                 break
         self.rtt_ts_list[:] = [ts for ts in self.rtt_ts_list if ts[0] >= tx_cnt_from_rx]
-
+    
     def calc_comm(self):
         if self.tx_cnt < 1 or self.rx_cnt < 1:
             return -1
@@ -219,6 +222,9 @@ class SocketHandler:
             self.rx_rate = 1
         return 1
 
+    def calc_delay(self, rx_timestamp):
+        delay = int(time.time()*1000)-rx_timestamp
+        self.communication_performance['delay'] = delay
 
     def send(self, data, send_size):
         try:
