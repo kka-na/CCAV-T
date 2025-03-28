@@ -31,15 +31,14 @@ class SelfDriving():
         self.car = self.RM.car
         self.local_path = sdhelper.upsample_path_1m(self.RM.local_path)
         self.ct.update_value(self.RM.user_input['target_velocity'], self.car, self.local_path)
-        
+
     async def control(self):
         while not rospy.is_shutdown():
             self.update_values()
             actuator = self.ct.execute()
             self.tm.target.set_actuator(actuator)
             self.tm.target.set_user_input(self.RM.user_input)
-            await asyncio.sleep(0.1) #10hz 
-            
+            await asyncio.sleep(0.1) #10hz             
 
     def execute(self):
         loop = asyncio.get_event_loop()
