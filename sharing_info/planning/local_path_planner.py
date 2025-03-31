@@ -23,7 +23,8 @@ class LocalPathPlanner:
         self.local_pose = None
         self.current_velocity = 0.0
         self.current_signal = 0
-        self.target_state = 0
+        self.scenario = (1,1)
+        self.target_signal = 0
         self.change_state = False
         self.change_id = None
 
@@ -41,12 +42,22 @@ class LocalPathPlanner:
         self.L = 4.75
         self.max_path_len = 30
         self.default_len = 120
+
+        self.safety = 0
+        self.target_path = []
+        self.confirm_safety = False
+        self.check_safety = []
+        self.intersection_radius = 1.5
     
-    def update_value(self,car, signal, target_state, dangerous_obstacle):
+    def update_value(self,car, user_input, target_info, target_path, dangerous_obstacle):
         self.local_pose = [car['x'], car['y']]
         self.current_velocity = car['v']
-        self.current_signal = signal
-        self.target_state = target_state
+        self.current_signal = user_input['signal']
+        self.scenario = (user_input['scenario_type'],user_input['scenario_number'])
+        self.target_signal = target_info[1]
+        self.target_velocity = target_info[2]
+        if len(target_path) > 0:
+            self.target_path = phelper.smooth_interpolate(target_path, 1)
         self.dangerous_obstacle = dangerous_obstacle
     
     def current_lane_waypoints(self, local_pose): 
@@ -59,20 +70,13 @@ class LocalPathPlanner:
             curr_lane_waypoints = phelper.lanelets[l_id]['waypoints']
             curr_lane_waypoints = curr_lane_waypoints[:200] if len(curr_lane_waypoints) > 200 else curr_lane_waypoints
             return curr_lane_waypoints, lane_number
-    
-    def need_update(self):
-        if self.local_path == None:
-            return 0
-        if self.temp_signal != self.current_signal and self.current_signal != 0 and self.current_signal <= 3:
-            self.temp_signal = self.current_signal
-            return 2
-        else:
-            return 1
-    
+
     def check_planner_state(self, caution):
+        # signal : 1 left change, 2 right change, 3 straight, 4 merge accept, 5 merge deny, 6 merge reset, 7 emergency
         if self.local_path == None:
             return 'INIT'
         if self.current_signal == 3:
+            self.temp_signal = self.current_signal
             self.change_state = False
             return 'STRAIGHT'
         if not self.change_state:
@@ -80,14 +84,15 @@ class LocalPathPlanner:
                 self.temp_signal = self.current_signal
                 self.change_state = True
                 return 'CHANGE'
-            elif self.temp_signal != self.current_signal and self.current_signal in [4,5,6,7] :
+            elif self.temp_signal != self.current_signal and self.current_signal in [7] :
                 self.temp_signal = self.current_signal
                 self.change_state = True
                 return 'EMERGENCY_CHANGE'
-            elif self.temp_signal != self.target_state and self.target_state in [4,5,6,7]:
-                self.temp_signal = self.target_state
+            elif self.temp_signal != self.target_signal and self.target_signal in [7]:
+                self.temp_signal = self.target_signal
                 self.change_state = True
                 return 'EMERGENCY_CHANGE'
+
             else:
                 return 'STRAIGHT'
         else:
@@ -95,8 +100,13 @@ class LocalPathPlanner:
             if idnidx[0] == self.change_id:
                 self.change_state = False
                 return 'INIT'
-            else:
-                return 'CHANGING'
+            else: # if merging rejected
+                if self.temp_signal != self.target_signal and self.target_signal == 5: #Target merging rejected
+                    self.temp_signal = 3
+                    self.change_state = False
+                    return 'STRAIGHT'
+                else:
+                    return 'CHANGING'
     
     def get_change_path(self, sni,  path_len, to=1):
         wps, uni = self.phelper.get_straight_path(sni, path_len)
@@ -117,8 +127,13 @@ class LocalPathPlanner:
         c_pt = wps[-1]
         l_id, r_id = self.phelper.get_neighbor(uni[0])
         n_id = r_id if r_id is not None else l_id
-        if self.prev_lane_number == 1 and self.local_lane_number == 2:
-            n_id = l_id if self.type == 'ego' else r_id
+        if self.scenario[0] == 2: #if ETrA Scenario,
+            if self.type == 'ego':
+                if self.scenario[1] in [2, 4, 5]:
+                    n_id = l_id
+            if self.type == 'target':
+                if self.scenario[1] in [4, 5]:
+                    n_id = l_id
 
         if n_id is not None:
             r = self.MAP.lanelets[n_id]['waypoints']
@@ -177,6 +192,58 @@ class LocalPathPlanner:
 
         return local_path
 
+    def merge_safety_calc(self):
+        if self.local_path is None or len(self.target_path) < 1:
+            self.safety = 0 #MERGE ALGORITHM FAIL
+
+        find = False
+        inter_idx = 0
+        l_target = 0
+
+        for hi, hwp in enumerate(self.target_path):
+            if find:
+                break
+            for ti, twp in enumerate(self.local_path):
+                if self.is_insied_circle(twp, hwp, self.intersection_radius):
+                    inter_idx = ti
+                    l_target = hi
+                    find = True
+                    break
+
+        if find and not self.confirm_safety and self.target_signal != 0:
+            now_idx = phelper.find_nearest_idx(self.local_path, self.local_pose)
+            l_o1 = (inter_idx-now_idx)
+            l_o2 = self.current_velocity * ((l_target)/self.target_velocity) if self.target_velocity != 0 else 0
+            l_o3 = l_o1-l_o2
+            d_TC = self.current_velocity*self.t_reaction_change
+                      
+            if inter_idx <= now_idx+10:
+                safety = 0  
+            else:
+                safety = 1 if l_o3 > d_TC else 2 # 1 : Safe, 2 : Dangerous
+            
+            #TODO
+            # safety = 1 #safe mode (scenario 1, scenario 3)
+            # safety = 2 #dangerous mode (scenario 2)
+
+             # Safety 확인 로직
+            if self.safety != safety:
+                if not self.check_safety:
+                    self.check_safety.append(safety)
+                    self.safety = safety
+                else:
+                    self.confirm_safety = True
+            else:
+                self.check_safety.append(safety)
+                if len(self.check_safety) == 4:
+                    self.confirm_safety = True
+
+    def is_insied_circle(self, pt1, pt2, radius):
+        distance = math.sqrt((pt1[0]-pt2[0])**2+(pt1[1]-pt2[1])**2)
+        if distance <=  radius:
+            return True
+        else:
+            return False
     
     def execute(self):
         if self.local_pose is None or self.local_pose[0] == 'inf':
@@ -185,17 +252,21 @@ class LocalPathPlanner:
             caution = self.phelper.calc_caution_by_ttc(self.dangerous_obstacle, self.local_pose, self.current_velocity)
         else:
             caution = False
+
         caution = False
-        
+
         pstate = self.check_planner_state(caution)
         self.local_path = self.make_path(pstate, self.local_pose)
-        if self.local_path == None or len(self.local_path) <= 0:
+        if self.local_path is None or len(self.local_path) <= 0:
             return [self.local_pose],[self.local_pose],[self.local_pose],self.local_lane_number, caution
         #self.local_path, local_kappa = self.phelper.interpolate_path(local_path)
         local_waypoints, self.local_lane_number = self.current_lane_waypoints(self.local_pose)
         limit_local_path = self.phelper.limit_path_length(self.local_path, self.max_path_len)
         if self.local_lane_number != self.prev_lane_number:
             self.pre_lane_number = self.local_lane_number
+        
+        if self.type == 'target':
+            self.merge_safety_calc()
 
-        return self.local_path, limit_local_path, local_waypoints, self.local_lane_number, caution
+        return self.local_path, limit_local_path, local_waypoints, self.local_lane_number, caution, self.safety
 

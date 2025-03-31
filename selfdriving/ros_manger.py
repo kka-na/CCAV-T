@@ -34,8 +34,8 @@ class ROSManager:
         self.target_velocity = msg.target_velocity.data
     
     def user_input_cb(self, msg):
-        self.user_input['state'] = msg.data[0]
-        self.user_input['signal'] = msg.data[1]
+        self.user_input['state'] = int(msg.data[0])
+        self.user_input['signal'] = int(msg.data[1])
         self.user_input['target_velocity'] = msg.data[2]
 
     def pub_lh(self, lh):

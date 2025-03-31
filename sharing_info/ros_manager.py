@@ -21,11 +21,12 @@ class ROSManager:
     
     def set_values(self):
         self.car = {'fix': 'No','x': 0, 'y': 0, 't': 0, 'v': 0}
-        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 10/3.6}
+        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 10/3.6, 'scenario_type':1, 'scenario_number':1}
         self.lidar_obstacles = []
         self.dangerous_obstacle = []
         self.obstacle_caution = False
-        self.target_state = 0
+        self.target_info = [0,0,0]
+        self.target_path = []
 
         proj_wgs84 = Proj(proj='latlong', datum='WGS84') 
         proj_enu = Proj(proj='aeqd', datum='WGS84', lat_0=self.map.base_lla[0], lon_0=self.map.base_lla[1], h_0=self.map.base_lla[2])
@@ -33,15 +34,12 @@ class ROSManager:
         self.enu2geo_transformter = Transformer.from_proj(proj_enu, proj_wgs84)
 
     def set_protocol(self):
-        if self.type == 'target':
-            rospy.Subscriber(f'/{self.type}/TargetShareInfo', ShareInfo, self.target_share_info_cb) 
-
+        rospy.Subscriber(f'/{self.type}/TargetShareInfo', ShareInfo, self.target_share_info_cb) 
         rospy.Subscriber('/novatel/oem7/inspva', INSPVA, self.novatel_inspva_cb)
         rospy.Subscriber('/novatel/oem7/odom', Odometry, self.novatel_odom_cb)
         rospy.Subscriber('/mobinha/perception/lidar/track_box', BoundingBoxArray, self.lidar_cluster_cb)
         rospy.Subscriber(f'/{self.type}/user_input',Float32MultiArray, self.user_input_cb)
         rospy.Subscriber('/simulator/inform', Quaternion, self.simulator_inform_cb)
-
 
         self.pub_ego_share_info = rospy.Publisher(f'/{self.type}/EgoShareInfo', ShareInfo, queue_size=1)
         if self.type == 'ego':
@@ -67,12 +65,18 @@ class ROSManager:
         self.car['v'] = msg.z
 
     def target_share_info_cb(self, msg:ShareInfo):
-        self.target_state  = msg.state.data
+        self.target_info  = [int(msg.state.data), int(msg.signal.data), float(msg.velocity.data)]
+        path = []
+        for pts in msg.paths:
+            path.append([pts.pose.x, pts.pose.y])
+        self.target_path = path 
 
     def user_input_cb(self, msg):
-        self.user_input['state'] = msg.data[0]
-        self.user_input['signal'] = msg.data[1]
+        self.user_input['state'] = int(msg.data[0])
+        self.user_input['signal'] = int(msg.data[1])
         self.user_input['target_velocity'] = msg.data[2]
+        self.user_input['scenario_type'] = int(msg.data[3])
+        self.user_input['scenario_number'] = int(msg.data[4])
 
     def lidar_cluster_cb(self, msg):
         obstacles = []
@@ -131,20 +135,28 @@ class ROSManager:
         la, ln, al = self.enu2geo_transformter.transform(x, y, 5)
         return [la, ln]
 
-    def organize_share_info(self, _path):
+    def organize_share_info(self, _path, merge_safety):
         share_info = ShareInfo()
         if self.car['fix'] == 'No':
             return share_info
-        
         share_info.state.data = int(self.user_input['state'])
-        share_info.signal.data = int(self.user_input['signal'])
+
+        if self.type == 'target':
+            if merge_safety != 0:
+                share_info.signal.data = 4 if merge_safety == 1 else 5
+            else:
+                share_info.signal.data = int(self.user_input['signal'])
+        else:
+            share_info.signal.data = int(self.user_input['signal'])
+
+
         share_info.target_velocity.data = float(self.user_input['target_velocity'])
         share_info.pose.x = self.car['x']
         share_info.pose.y = self.car['y']
         share_info.pose.theta = self.car['t']
         share_info.velocity.data = self.car['v']
-
         if _path != None:
+            share_info.path_len.data = int(len(_path))
             for xy in _path:
                 path = Path()
                 path.pose.x = xy[0]
@@ -156,7 +168,7 @@ class ROSManager:
         return share_info
     
     def publish(self, lpp_res):
-        share_info = self.organize_share_info(lpp_res[1])
+        share_info = self.organize_share_info(lpp_res[1],lpp_res[5])
         self.pub_ego_share_info.publish(share_info)
         if self.type == 'ego':
             self.pub_obs_caution.publish(Bool(lpp_res[4]))

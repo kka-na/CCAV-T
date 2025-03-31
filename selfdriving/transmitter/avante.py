@@ -34,7 +34,7 @@ class Avante():
             self.EAIT_Control_01['Turn_Signal'] = 2
         elif int(msg['signal']) == 2:
             self.EAIT_Control_01['Turn_Signal'] = 4
-        elif int(msg['signal']) == 4:
+        elif int(msg['signal']) == 7:
             self.EAIT_Control_01['Turn_Signal'] = 1
         else:
             self.EAIT_Control_01['Turn_Signal'] = 0

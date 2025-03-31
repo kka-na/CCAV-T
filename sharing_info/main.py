@@ -29,7 +29,7 @@ class SharingInfo():
         self.local_lane_number = None
 
     def update_value(self):
-        self.lpp.update_value(self.RM.car, self.RM.user_input['signal'], self.RM.target_state, self.RM.dangerous_obstacle)
+        self.lpp.update_value(self.RM.car, self.RM.user_input, self.RM.target_info, self.RM.target_path, self.RM.dangerous_obstacle)
         self.oh.update_value(self.RM.car, self.lpp.local_path) 
 
     def path_planning(self):

@@ -35,8 +35,10 @@ class MyApp(QMainWindow):
 
         self.state_list = {'temp': 0, 'prev': 0, 'target':0}
         self.state_string = ['Normal', 'Left Change', 'Right Change', 'Straight', 'Safe', 'Dangerous']
-        self.signal_buttons = ['', self.ui.leftButton, self.ui.rightButton, self.ui.straightButton, self.ui.eButton]
+        self.signal_buttons = {self.ui.leftButton:1, self.ui.rightButton:2, self.ui.straightButton:3,self.ui.eButton:7}
         self.selfdriving_buttons = [self.ui.stopButton, self.ui.startButton]
+        self.radio_map = {self.ui.radioCLM: 1, self.ui.radioETrA : 2}
+        self.check_map = {self.ui.check1 : 1, self.ui.check2 : 2, self.ui.check3 : 3, self.ui.check4 : 4, self.ui.check5:5, self.ui.check6:6}
 
     def set_widgets(self):
         self.rviz_widget = RvizWidget(self, self.type)
@@ -101,6 +103,14 @@ class MyApp(QMainWindow):
     
     def click_set(self):
         self.RM.user_input[2] = float(self.ui.velocityBox.value()/3.6)
+        for radio, value in self.radio_map.items():
+            if radio.isChecked():
+                self.RM.user_input[3] = value
+                break
+        for checkbox, value in self.check_map.items():
+            if checkbox.isChecked():
+                self.RM.user_input[4] = value
+                break
         self.check_timer()
 
     def check_timer(self):
@@ -135,11 +145,13 @@ class MyApp(QMainWindow):
         self.ui.PacketRateLayout.addWidget(self.packet_rate_graph)
 
     def set_conntection(self):
-        for i in range(1,5):
-            self.signal_buttons[i].clicked.connect(partial(self.click_signal, int(i)))
+        for button, value in self.signal_buttons.items():
+            button.clicked.connect(partial(self.click_signal,int(value)))
         for i in range(0,2):
             self.selfdriving_buttons[i].clicked.connect(partial(self.click_selfdriving, int(i)))
         self.ui.setButton.clicked.connect(self.click_set)
+    
+
 def main():
     app = QApplication(sys.argv)
     type = sys.argv[1]

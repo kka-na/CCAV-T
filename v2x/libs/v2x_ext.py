@@ -25,7 +25,7 @@ class SharingInformation(Structure):
         ("longitude", c_float),
         ("heading", c_float),
         ("velocity", c_float),
-    
+        ("path_len", c_uint32),
         ("path_x", c_float*30),
         ("path_y", c_float*30),
         ("obstacle_num", c_uint16),
