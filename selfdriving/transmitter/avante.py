@@ -82,7 +82,7 @@ class Avante():
         self.EAIT_Control_01 = {
             'EPS_En': 0x00, 
             'EPS_Override_Ignore': 0x00,  
-            'EPS_Speed': 10,  
+            'EPS_Speed': 50,  
             'ACC_En': 0x00,  
             'AEB_En': 0x00,  
             'Turn_Signal': 0x00,  

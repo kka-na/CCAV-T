@@ -54,7 +54,7 @@ class ROSManager:
         e,n,u =  self.geo2enu_transformer.transform(msg.longitude, msg.latitude, 5)
         self.car['x'] = e
         self.car['y'] = n
-        self.car['t'] = 89-msg.azimuth
+        self.car['t'] = 90-msg.azimuth
     
     def novatel_odom_cb(self, msg):
         self.car['v'] = msg.twist.twist.linear.x

@@ -35,7 +35,8 @@ class SelfDriving():
     async def control(self):
         while not rospy.is_shutdown():
             self.update_values()
-            actuator = self.ct.execute()
+            actuator, lh = self.ct.execute()
+            self.RM.pub_lh(lh)
             self.tm.target.set_actuator(actuator)
             self.tm.target.set_user_input(self.RM.user_input)
             await asyncio.sleep(0.1) #10hz             
