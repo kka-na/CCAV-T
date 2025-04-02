@@ -259,7 +259,7 @@ class LocalPathPlanner:
         self.local_path = self.make_path(pstate, self.local_pose)
         if self.local_path is None or len(self.local_path) <= 0:
             return [self.local_pose],[self.local_pose],[self.local_pose],self.local_lane_number, caution, self.safety
-        #self.local_path, local_kappa = self.phelper.interpolate_path(local_path)
+        self.local_path, local_kappa = self.phelper.interpolate_path(local_path)
         local_waypoints, self.local_lane_number = self.current_lane_waypoints(self.local_pose)
         limit_local_path = self.phelper.limit_path_length(self.local_path, self.max_path_len)
         if self.local_lane_number != self.prev_lane_number:
