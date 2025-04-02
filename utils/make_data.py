@@ -71,7 +71,7 @@ class MakeData:
 
     def novatel_corrimu_cb(self, msg: CORRIMU):
         self.car_accel = [msg.lateral_acc, msg.longitudinal_acc]
-        self.car_rotation = [msg.pitch_rate, msg.roll_rate, msg.yaw]
+        self.car_rotation = [msg.pitch_rate, msg.roll_rate, msg.yaw_rate]
     
     def communication_performance_cb(self, msg:Float32MultiArray):
         self.comm_perform = [msg.data[5], msg.data[2], msg.data[3], msg.data[7]]
