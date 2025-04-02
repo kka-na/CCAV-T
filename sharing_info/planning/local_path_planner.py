@@ -261,7 +261,7 @@ class LocalPathPlanner:
             return [self.local_pose],[self.local_pose],[self.local_pose],self.local_lane_number, caution, self.safety
         local_waypoints, self.local_lane_number = self.current_lane_waypoints(self.local_pose)
         limit_local_path = self.phelper.limit_path_length(self.local_path, self.max_path_len)
-        self.local_path = phelper.smooth_interpolate(self.local_path_path, 1)
+        self.local_path = phelper.smooth_interpolate(self.local_path, 1)
         if self.local_lane_number != self.prev_lane_number:
             self.pre_lane_number = self.local_lane_number
         
