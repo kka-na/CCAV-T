@@ -79,12 +79,12 @@ class MakeData:
 
     def user_input_cb(self, msg:Float32MultiArray):
         self.state, self.signal = int(msg.data[0]), int(msg.data[1])
-        if not self.csv_initiation and self.state == 1:
+        if not self.csv_initiation:
             self.csv_initiation = True
             self.init_csv(int(msg.data[2]*3.6), int(msg.data[3]), int(msg.data[4]))
         
-        if self.csv_initiation and self.state == 0:
-            self.csv_initiation = False
+        # if self.csv_initiation and self.state == 0:
+        #     self.csv_initiation = False
 
 
     def write_to_csv(self):
