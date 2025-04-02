@@ -17,7 +17,7 @@ class RosManager:
         self.Hz = 10
         self.rate = rospy.Rate(self.Hz)
         self.user_input = [0,0,0,0,0] # selfdriving, signal, target_velocity, scenario_type, scenario_number
-        self.states = {
+        self.signals = {
             'ego': 0,
             'target': 0
         }
@@ -39,10 +39,10 @@ class RosManager:
         self.pub_user_input = rospy.Publisher(f'/{self.type}/user_input', Float32MultiArray, queue_size=1)
 
     def ego_share_info_cb(self, msg:ShareInfo):
-        self.states['ego'] = msg.state.data
+        self.signals['ego'] = msg.signal.data
     
     def target_share_info_cb(self, msg:ShareInfo):
-        self.states['target']  = msg.state.data
+        self.signals['target']  = msg.signal.data
 
     def communication_performance_cb(self, msg):
         state, v2x, rtt, mbps, packet_size, packet_rate, distance, delay = msg.data

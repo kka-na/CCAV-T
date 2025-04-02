@@ -34,7 +34,7 @@ class MyApp(QMainWindow):
         self.sig_in = False
 
         self.state_list = {'temp': 0, 'prev': 0, 'target':0}
-        self.state_string = ['Normal', 'Left Change', 'Right Change', 'Straight', 'Safe', 'Dangerous']
+        self.state_string = ['Normal', 'Left Change', 'Right Change', 'Straight', 'Safe', 'Dangerous', 'Init', 'Emergency']
         self.signal_buttons = {self.ui.leftButton:1, self.ui.rightButton:2, self.ui.straightButton:3,self.ui.eButton:7}
         self.selfdriving_buttons = [self.ui.stopButton, self.ui.startButton]
         self.radio_map = {self.ui.radioCLM: 1, self.ui.radioETrA : 2}
@@ -61,7 +61,7 @@ class MyApp(QMainWindow):
 
     def updateUI(self):
         self.comm_perform_update(self.RM.communication_performance)
-        self.state_update(self.RM.states)
+        self.state_update(self.RM.signals)
     
     def comm_perform_update(self, communication_performance):
         self.ui.tableWidget.setStyleSheet('background-color: rgb(238, 238, 236);')
@@ -78,19 +78,11 @@ class MyApp(QMainWindow):
         self.packet_size_graph.set_speed(communication_performance['packet_size'])
         self.packet_rate_graph.set_speed(communication_performance['packet_rate'])
 
-    def state_update(self, states):
-        ego_state = int(self.state_list['temp'])
-        target_state = int(states['target'])
-
-        if self.state_list['target'] != target_state and target_state != 0:
-            self.state_list['target'] = target_state
-            if self.type == 'target':
-                self.click_state(target_state)
-            else:
-                self.check_viz_timer()
-
-        self.ui.egoLabel.setText(self.state_string[ego_state])
-        self.ui.targetLabel.setText(self.state_string[self.state_list['target']])
+    def state_update(self, signals):
+        ego_signal = int(signals['ego'])
+        target_signal = int(signals['target'])
+        self.ui.egoLabel.setText(self.state_string[ego_signal])
+        self.ui.targetLabel.setText(self.state_string[target_signal])
         
     def click_signal(self, value):
         self.RM.user_input[1] = value

@@ -18,14 +18,13 @@ class SharingInformation(Structure):
     _fields_ = [
         ("tx_cnt", c_uint32),
         ("tx_cnt_from_rx", c_uint32),
-        ("timestamp", c_uint64)
+        ("timestamp", c_uint64),
         ("state", c_uint8),
         ("signal", c_uint8),
         ("latitude", c_float),
         ("longitude", c_float),
         ("heading", c_float),
         ("velocity", c_float),
-        ("path_len", c_uint32),
         ("path_x", c_float*30),
         ("path_y", c_float*30),
         ("obstacle_num", c_uint16),
@@ -108,5 +107,21 @@ class TLVC_STATUS_CommUnit(Structure):
         ("hw_ver", c_uint16),     # 2 bytes
         ("sw_ver", c_uint16),     # 2 bytes
         ("timestamp", c_uint64),  # 8 bytes
+        ("crc", c_uint16)         # 2 bytes, 네트워크 바이트 오더
+    ]
+
+class TLVC_STATUS_CommUnit_V2(Structure):
+    _pack_ = 1  # 모든 필드가 메모리에 밀집되게 패킹
+    _fields_ = [
+        ("type", c_uint32),       # 4 bytes, 네트워크 바이트 오더
+        ("len", c_uint16),        # 2 bytes, 네트워크 바이트 오더
+        ("dev_type", c_uint8),    # 1 byte
+        ("tx_rx", c_uint8),       # 1 byte
+        ("dev_id", c_uint32),     # 4 bytes
+        ("hw_ver", c_uint16),     # 2 bytes
+        ("sw_ver", c_uint16),     # 2 bytes
+        ("timestamp", c_uint64),  # 8 bytes
+        ("cpu_temp", c_char),
+        ("peri_temp", c_char),
         ("crc", c_uint16)         # 2 bytes, 네트워크 바이트 오더
     ]

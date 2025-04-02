@@ -56,7 +56,7 @@ class LocalPathPlanner:
         self.scenario = (user_input['scenario_type'],user_input['scenario_number'])
         self.target_signal = target_info[1]
         self.target_velocity = target_info[2]
-        if len(target_path) > 0:
+        if len(target_path) > 4:
             self.target_path = phelper.smooth_interpolate(target_path, 1)
         self.dangerous_obstacle = dangerous_obstacle
     
@@ -193,7 +193,7 @@ class LocalPathPlanner:
         return local_path
 
     def merge_safety_calc(self):
-        if self.local_path is None or len(self.target_path) < 1:
+        if self.local_path is None or len(self.target_path) < 2:
             self.safety = 0 #MERGE ALGORITHM FAIL
 
         find = False
@@ -258,7 +258,7 @@ class LocalPathPlanner:
         pstate = self.check_planner_state(caution)
         self.local_path = self.make_path(pstate, self.local_pose)
         if self.local_path is None or len(self.local_path) <= 0:
-            return [self.local_pose],[self.local_pose],[self.local_pose],self.local_lane_number, caution
+            return [self.local_pose],[self.local_pose],[self.local_pose],self.local_lane_number, caution, self.safety
         #self.local_path, local_kappa = self.phelper.interpolate_path(local_path)
         local_waypoints, self.local_lane_number = self.current_lane_waypoints(self.local_pose)
         limit_local_path = self.phelper.limit_path_length(self.local_path, self.max_path_len)

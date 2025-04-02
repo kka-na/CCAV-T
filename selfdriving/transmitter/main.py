@@ -13,12 +13,12 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 class Transmitter():
-    def __init__(self, car, map):
-        self.set_values(car, map)
+    def __init__(self, type, car, map):
+        self.set_values(type, car, map)
     
-    def set_values(self, car, map):
+    def set_values(self, type, car, map):
         if car == 'simulator':
-            self.target = Simulator('ego', map, 1)
+            self.target = Simulator(type, map, 1)
         elif car == 'avante':
             self.target = Avante()
         elif car == 'ioniq5':

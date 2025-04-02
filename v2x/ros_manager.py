@@ -173,7 +173,7 @@ class RosManager:
             thread1.join()
             thread2.join()
             thread3.join()
-            thread4.join()
+            thread4.join()       
         
         return sharing_state
         

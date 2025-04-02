@@ -1,5 +1,6 @@
 
 import socket
+import os
 from ctypes import *
 from datetime import datetime, timedelta
 import struct
@@ -16,7 +17,7 @@ V2V_PSID = EM_V2V_MSG
 class SocketHandler:
     def __init__(self, type, interface, chip):
         self.interface = interface
-        self.interface_list = [b'', b'enp4s0', b'enx00e04c6a3d90']
+        self.interface_list = [b'', b'enp4s0', b'enx00e04e69e57a']
         self.chip = chip
         self.communication_performance = {
             'state': 0,
@@ -36,7 +37,9 @@ class SocketHandler:
         self.logger = logging.getLogger('v2x')
         self.logger.setLevel(logging.DEBUG)
         formatted_datetime = datetime.today().strftime('%m%d%H%M')
-        file_handler = logging.FileHandler(f'./log/{self.chip}_{type}_{formatted_datetime}.log')
+        log_dir = f"../log/{type}"
+        os.makedirs(log_dir, exist_ok=True)
+        file_handler = logging.FileHandler(f'../log/{type}/{self.chip}_{formatted_datetime}.log')
         file_handler.setLevel(logging.DEBUG)
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.DEBUG)
@@ -158,7 +161,7 @@ class SocketHandler:
     def rx(self):
         data = self.receive()
         if data == None:
-            return -1
+            return [0,0,0]
         if len(data) > SIZE_WSR_DATA:
             self.rx_cnt += 1
             self.rx_rate += 1
@@ -178,8 +181,11 @@ class SocketHandler:
             obstacles = []
             for i in range(socket.ntohs(sharing_information.obstacle_num)):
                 ofs = tlvc_ofs+sizeof(V2x_App_SI_TLVC)+(i*sizeof(ObstacleInformation))
-                obstacle = ObstacleInformation.from_buffer_copy(data[ofs:ofs+sizeof(ObstacleInformation)])
-                obstacles.append(obstacle)
+                if len(data) < ofs + sizeof(ObstacleInformation):
+                    pass
+                else:
+                    obstacle = ObstacleInformation.from_buffer_copy(data[ofs:ofs+sizeof(ObstacleInformation)])
+                    obstacles.append(obstacle)
             state, path, obstacles = self.organize_data(len(data), sharing_information, obstacles)
             rx_message = self.get_log_datum(state, path, obstacles)
             self.logger.info(f"Rx cnt:{self.tx_cnt_from_rx}")
@@ -245,11 +251,12 @@ class SocketHandler:
     
     
     def receive(self):
+        self.fd.settimeout(5)
         try:
             data = self.fd.recv(sizeof(c_char)*MAX_TX_PACKET_TO_OBU)
             return data
-        except socket.error as e:
-            self.logger.error(f"{e}")
+        except socket.timeout as t:
+            self.logger.error(f"{t}")
             return None
         
     def get_base(self):
@@ -288,12 +295,13 @@ class SocketHandler:
     def get_p_overall(self, cnt):
         if self.chip == 'out':
             p_overall = cast(addressof(self.tx_msg.contents)+V2x_App_TxMsg.data.offset, POINTER(TLVC_Overall_V2))
+            p_overall.contents.len = socket.htons(sizeof(TLVC_Overall_V2)-6)
         else:
             p_overall = cast(addressof(self.tx_msg.contents)+V2x_App_TxMsg.data.offset, POINTER(TLVC_Overall))
+            p_overall.contents.len = socket.htons(sizeof(TLVC_Overall)-6)
         p_overall.contents.type = socket.htonl(EM_PT_OVERALL)
-        p_overall.contents.len = socket.htons(sizeof(TLVC_Overall_V2)-6)
         p_overall.contents.magic=b'EMOP'
-        p_overall.contents.version = 1
+        p_overall.contents.version = 2
         p_overall.contents.num_package = cnt
         if self.chip == 'out':
             p_overall.contents.bitwize = 0x77
@@ -320,19 +328,25 @@ class SocketHandler:
 
     def add_ext_status_data(self, p_overall, package_len):
         if self.chip == 'out':
-            p_status = cast(addressof(p_overall.contents)+sizeof(TLVC_Overall_V2)+package_len, POINTER(TLVC_STATUS_CommUnit))
+            p_status = cast(addressof(p_overall.contents)+sizeof(TLVC_Overall_V2)+package_len, POINTER(TLVC_STATUS_CommUnit_V2))
+            package_len += sizeof(TLVC_STATUS_CommUnit_V2)
         else:
             p_status = cast(addressof(p_overall.contents)+sizeof(TLVC_Overall)+package_len, POINTER(TLVC_STATUS_CommUnit))
+            package_len += sizeof(TLVC_STATUS_CommUnit)
         p_overall.contents.num_package += 1
-        package_len += sizeof(TLVC_STATUS_CommUnit)
+        
         p_overall.contents.len_package = socket.htons(package_len)
         crc_data = bytearray(addressof(p_overall.contents))
         if self.chip == 'out':
             p_overall.contents.crc = socket.htons(calc_crc16(crc_data, sizeof(TLVC_Overall_V2)-2))
         else:
             p_overall.contents.crc = socket.htons(calc_crc16(crc_data, sizeof(TLVC_Overall)-2))
+        
         p_status.contents.type = socket.htonl(EM_PT_STATUS)
-        p_status.contents.len = socket.htons(sizeof(TLVC_STATUS_CommUnit)-6)
+        if self.chip == 'out':
+            p_status.contents.len = socket.htons(sizeof(TLVC_STATUS_CommUnit_V2)-6)
+        else:
+            p_status.contents.len = socket.htons(sizeof(TLVC_STATUS_CommUnit)-6)
         p_status.contents.dev_type = eV2x_App_Ext_Status_DevType.eStatusDevType_Obu
         p_status.contents.tx_rx = 0
         p_status.contents.dev_id = socket.htonl(1)
@@ -340,7 +354,12 @@ class SocketHandler:
         p_status.contents.sw_ver = socket.htons(3)
         p_status.contents.timestamp = self.htobe64(self.get_keti_time())
         crc_data = bytearray(addressof(p_status.contents))
-        p_status.contents.crc = socket.htons(calc_crc16(crc_data, sizeof(TLVC_STATUS_CommUnit)-2))
+        if self.chip == 'out':
+            p_status.contents.cpu_temp = 50
+            p_status.contents.peri_temp = 50
+            p_status.contents.crc = socket.htons(calc_crc16(crc_data, sizeof(TLVC_STATUS_CommUnit_V2)-2))
+        else:
+            p_status.contents.crc = socket.htons(calc_crc16(crc_data, sizeof(TLVC_STATUS_CommUnit)-2))
 
     def get_keti_time(self):
         now = datetime.now() + timedelta(hours=9)

@@ -45,11 +45,11 @@ class Simulator:
         self.obstacles = []
         self.set_ego(map)
 
-        self.set_protocol()
+        self.set_protocol(type)
     
-    def set_protocol(self):
+    def set_protocol(self,type):
         rospy.Subscriber('/initialpose', PoseWithCovarianceStamped, self.init_pose_cb)
-        self.simulator_pub = rospy.Publisher('/simulator/inform', Quaternion, queue_size=1)
+        self.simulator_pub = rospy.Publisher(f'/{type}/simulator/inform', Quaternion, queue_size=1)
 
     def init_pose_cb(self, msg):
         x = msg.pose.pose.position.x
@@ -91,7 +91,7 @@ class Simulator:
         elif map == 'Solbat':
             if self.scenario == 1:
                 if self.type == 'target':
-                    self.ego = Vehicle(943.767, -664.643, -0.663)
+                    self.ego = Vehicle(967.679, -687.232, -0.696)
                 else:
                     self.ego = Vehicle(976.832, -690.212, -0.695)
                 self.obstacles=[[1165.085, -836.513, -0.661, -13, 1]]

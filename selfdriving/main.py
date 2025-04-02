@@ -20,7 +20,7 @@ class SelfDriving():
     def __init__(self, type,car, map):
         self.RM = ROSManager(type)
         self.ct = Control(car)
-        self.tm = Transmitter(car, map)
+        self.tm = Transmitter(type, car, map)
         self.set_values()
     
     def set_values(self):

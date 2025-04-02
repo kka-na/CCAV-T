@@ -39,7 +39,7 @@ class ROSManager:
         rospy.Subscriber('/novatel/oem7/odom', Odometry, self.novatel_odom_cb)
         rospy.Subscriber('/mobinha/perception/lidar/track_box', BoundingBoxArray, self.lidar_cluster_cb)
         rospy.Subscriber(f'/{self.type}/user_input',Float32MultiArray, self.user_input_cb)
-        rospy.Subscriber('/simulator/inform', Quaternion, self.simulator_inform_cb)
+        rospy.Subscriber(f'/{self.type}/simulator/inform', Quaternion, self.simulator_inform_cb)
 
         self.pub_ego_share_info = rospy.Publisher(f'/{self.type}/EgoShareInfo', ShareInfo, queue_size=1)
         if self.type == 'ego':
@@ -156,7 +156,6 @@ class ROSManager:
         share_info.pose.theta = self.car['t']
         share_info.velocity.data = self.car['v']
         if _path != None:
-            share_info.path_len.data = int(len(_path))
             for xy in _path:
                 path = Path()
                 path.pose.x = xy[0]

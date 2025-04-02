@@ -205,6 +205,8 @@ def gaussian_smoothing_2d(points, sigma=1):
 def smooth_interpolate(points, precision):
     points = filter_same_points(points)
     smoothed_path = gaussian_smoothing_2d(points)
+    if len(smoothed_path) < 2:
+        return points
     wx, wy = zip(*smoothed_path)
     itp = QuadraticSplineInterpolate(list(wx), list(wy))
     itp_points = []
