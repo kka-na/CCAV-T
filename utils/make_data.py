@@ -71,7 +71,7 @@ class MakeData:
 
     def novatel_corrimu_cb(self, msg: CORRIMU):
         self.car_accel = [msg.lateral_acc, msg.longitudinal_acc]
-        self.car_rotation = [msg.pitch_rate, msg.roll_rate, msg.yaw]
+        self.car_rotation = [msg.pitch_rate, msg.roll_rate, msg.yaw_rate]
     
     def communication_performance_cb(self, msg:Float32MultiArray):
         self.comm_perform = [msg.data[5], msg.data[2], msg.data[3], msg.data[7]]
@@ -79,12 +79,12 @@ class MakeData:
 
     def user_input_cb(self, msg:Float32MultiArray):
         self.state, self.signal = int(msg.data[0]), int(msg.data[1])
-        if not self.csv_initiation and self.state == 1:
+        if not self.csv_initiation:
             self.csv_initiation = True
             self.init_csv(int(msg.data[2]*3.6), int(msg.data[3]), int(msg.data[4]))
         
-        if self.csv_initiation and self.state == 0:
-            self.csv_initiation = False
+        # if self.csv_initiation and self.state == 0:
+        #     self.csv_initiation = False
 
 
     def write_to_csv(self):
