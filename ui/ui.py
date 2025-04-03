@@ -32,13 +32,15 @@ class MyApp(QMainWindow):
 
     def set_values(self):
         self.sig_in = False
-
+        self.sig_in_viz = False
         self.state_list = {'temp': 0, 'prev': 0, 'target':0}
         self.state_string = ['Normal', 'Left Change', 'Right Change', 'Straight', 'Safe', 'Dangerous', 'Init', 'Emergency']
         self.signal_buttons = {self.ui.leftButton:1, self.ui.rightButton:2, self.ui.straightButton:3,self.ui.eButton:7}
         self.selfdriving_buttons = [self.ui.stopButton, self.ui.startButton]
         self.radio_map = {self.ui.radioCLM: 1, self.ui.radioETrA : 2}
         self.check_map = {self.ui.check1 : 1, self.ui.check2 : 2, self.ui.check3 : 3, self.ui.check4 : 4, self.ui.check5:5, self.ui.check6:6}
+
+        self.ego_signal, self.target_signal = 0,0
 
     def set_widgets(self):
         self.rviz_widget = RvizWidget(self, self.type)
@@ -57,6 +59,10 @@ class MyApp(QMainWindow):
         self.user_input_timer = QTimer(self)
         self.user_input_timer.timeout.connect(self.state_triggered)
         self.user_input_timer.start(200)
+
+        self.user_input_viz_timer = QTimer(self)
+        self.user_input_viz_timer.timeout.connect(self.state_triggered_viz)
+        self.user_input_viz_timer.start(1000)
         
 
     def updateUI(self):
@@ -81,13 +87,22 @@ class MyApp(QMainWindow):
     def state_update(self, signals):
         ego_signal = int(signals['ego'])
         target_signal = int(signals['target'])
-        self.ui.egoLabel.setText(self.state_string[ego_signal])
-        self.ui.targetLabel.setText(self.state_string[target_signal])
+        if ego_signal != self.ego_signal:
+            self.ego_signal = ego_signal
+            self.check_viz_timer()
+        if target_signal != self.target_signal:
+            self.target_signal = target_signal
+            self.check_viz_timer()
+
+        self.ui.egoLabel.setText(self.state_string[self.ego_signal])
+        self.ui.targetLabel.setText(self.state_string[self.target_signal])
+
         
     def click_signal(self, value):
         self.RM.user_input[1] = value
         self.state = value
         self.check_timer()
+        self.check_viz_timer()
     
     def click_selfdriving(self, value):
         self.RM.user_input[0] = value
@@ -108,10 +123,16 @@ class MyApp(QMainWindow):
     def check_timer(self):
         if not self.sig_in:
             self.sig_in = True
-            self.user_input_timer.start(200)
+            self.user_input_timer.start(300)
             QTimer.singleShot(1600, self.stop_user_input_timer)
         else:
             self.stop_user_input_timer()
+    
+    def check_viz_timer(self):
+        if not self.sig_in_viz:
+            self.sig_in_viz = True
+            self.user_input_viz_timer.start(1000)
+            QTimer.singleShot(5000, self.stop_user_input_viz_timer)
     
     def stop_user_input_timer(self):
         self.sig_in = False
@@ -119,13 +140,30 @@ class MyApp(QMainWindow):
         self.user_input_timer.stop()
         self.RM.publish()
 
+    def stop_user_input_viz_timer(self):
+        self.sig_in_viz = False
+        self.ego_signal = 0
+        self.target_signal = 0
+        self.ui.egoLabel.setStyleSheet("QLabel {background-color: white;}")
+        self.ui.targetLabel.setStyleSheet("QLabel {background-color: white;}")
+        self.user_input_viz_timer.stop()   
+
     def state_triggered(self):
         self.RM.publish()
 
-    def stop_user_input_viz_timer(self):
-        self.state = 0
-        self.target_state = 0
-        self.user_input_viz_timer.stop()        
+    def state_triggered_viz(self):
+        if self.ego_signal in [1,2,3]:
+            self.ui.egoLabel.setStyleSheet("QLabel {background-color: yellow;}")
+        if self.target_signal in [1,2,3]:
+            self.ui.targetLabel.setStyleSheet("QLabel {background-color: yellow;}")
+        if self.ego_signal == 4:
+            self.ui.egoLabel.setStyleSheet("QLabel {background-color: green;}")
+        if self.target_signal == 4:
+            self.ui.targetLabel.setStyleSheet("QLabel {background-color: green;}")
+        if self.ego_signal in [5,7]:
+            self.ui.egoLabel.setStyleSheet("QLabel {background-color: red;}")
+        if self.target_signal in [5,7]:
+            self.ui.targetLabel.setStyleSheet("QLabel {background-color: red;}")
 
     def initUI(self):
         self.set_conntection()

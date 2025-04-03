@@ -7,7 +7,7 @@ from novatel_oem7_msgs.msg import INSPVA
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion
 from jsk_recognition_msgs.msg import BoundingBoxArray
-from visualization_msgs.msg import MarkerArray
+from visualization_msgs.msg import MarkerArray, Marker
 from std_msgs.msg import Float32MultiArray,Bool
 
 
@@ -23,12 +23,13 @@ class ROSManager:
     
     def set_values(self):
         self.car = {'fix': 'No','x': 0, 'y': 0, 't': 0, 'v': 0}
-        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 10/3.6, 'scenario_type':1, 'scenario_number':1}
+        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 0, 'scenario_type':1, 'scenario_number':1}
         self.lidar_obstacles = []
         self.dangerous_obstacle = []
         self.obstacle_caution = False
         self.target_info = [0,0,0]
         self.target_path = []
+        self.target_velocity = 0
 
         proj_wgs84 = Proj(proj='latlong', datum='WGS84') 
         proj_enu = Proj(proj='aeqd', datum='WGS84', lat_0=self.map.base_lla[0], lon_0=self.map.base_lla[1], h_0=self.map.base_lla[2])
@@ -55,6 +56,7 @@ class ROSManager:
         if self.type == 'ego':
             self.pub_obs_caution = rospy.Publisher(f'{self.type}/obs_caution', Bool, queue_size=1)
         self.pub_lmap_viz = rospy.Publisher('/lmap_viz', MarkerArray, queue_size=10,latch=True)
+        self.pub_inter_pt = rospy.Publisher(f'/{self.type}/inter_pt', Marker, queue_size=10)
         self.pub_lmap_viz.publish(self.map.lmap_viz)
 
     def novatel_inspva_cb(self, msg):
@@ -145,12 +147,11 @@ class ROSManager:
         la, ln, al = self.enu2geo_transformter.transform(x, y, 5)
         return [la, ln]
 
-    def organize_share_info(self, _path, merge_safety):
+    def organize_share_info(self, _path, _target_velocity, merge_safety):
         share_info = ShareInfo()
         if self.car['fix'] == 'No':
             return share_info
         share_info.state.data = int(self.user_input['state'])
-
         if self.type == 'target':
             if merge_safety != 0:
                 share_info.signal.data = 4 if merge_safety == 1 else 5
@@ -159,8 +160,7 @@ class ROSManager:
         else:
             share_info.signal.data = int(self.user_input['signal'])
 
-
-        share_info.target_velocity.data = float(self.user_input['target_velocity'])
+        share_info.target_velocity.data = _target_velocity
         share_info.pose.x = self.car['x']
         share_info.pose.y = self.car['y']
         share_info.pose.theta = self.car['t']
@@ -176,8 +176,29 @@ class ROSManager:
         
         return share_info
     
-    def publish(self, lpp_res):
-        share_info = self.organize_share_info(lpp_res[1],lpp_res[5])
+    def publish(self, lpp_res, vp_res):
+        share_info = self.organize_share_info(lpp_res[1],vp_res,lpp_res[5])
         self.pub_ego_share_info.publish(share_info)
         if self.type == 'ego':
             self.pub_obs_caution.publish(Bool(lpp_res[4]))
+    
+    def publish_inter_pt(self, inter_pt):
+        if inter_pt is not None:
+            marker = Marker()
+            marker.type = Marker.SPHERE
+            marker.action = Marker.ADD
+            marker.header.frame_id = 'world'
+            marker.ns = 'intersection'
+            marker.id = 1
+            marker.lifetime = rospy.Duration(0)
+            marker.scale.x = 1
+            marker.scale.y = 1
+            marker.scale.z = 1
+            marker.color.r = 33/255
+            marker.color.g = 255/255
+            marker.color.b = 144/255
+            marker.color.a = 0.7
+            marker.pose.position.x = inter_pt[0]
+            marker.pose.position.y = inter_pt[1]
+            marker.pose.position.z = 1.0
+            self.pub_inter_pt.publish(marker)

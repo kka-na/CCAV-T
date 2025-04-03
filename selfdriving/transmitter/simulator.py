@@ -39,12 +39,13 @@ class Simulator:
     def __init__(self, type, map, scenario):
         self.ego = None
         self.type = type
-        self.scenario = scenario
+        self.map = map
+        self.scenario = 0
         self.car = {'state':0, 'x': 0, 'y':0,'t': 0,'v': 0}
         self.actuator = {'steer': 0, 'accel': 0, 'brake': 0}
         self.obstacles = []
 
-        self.set_ego(map)
+        self.set_ego()
         self.set_protocol(type)
     
     def set_protocol(self,type):
@@ -80,13 +81,16 @@ class Simulator:
         self.simulator_pub.publish(quat)
     
     def set_user_input(self, msg):
-        pass
+        scenario = int(msg['scenario_number'])
+        if self.scenario != scenario:
+            self.scenario = scenario
+            self.set_ego() 
 
-    def set_ego(self, map):
+    def set_ego(self):
         with open("./transmitter/yaml/ego_pose.yaml", "r") as f:
             config = yaml.safe_load(f)
         
-        map_config = config.get(map, {})
+        map_config = config.get(self.map, {})
         scenario_data = map_config.get(self.scenario, map_config.get("default", {}))
         type_data = scenario_data.get(self.type, {})
         ego_pose = type_data.get("ego", [0,0,0])
@@ -94,7 +98,7 @@ class Simulator:
         self.obstacles = scenario_data.get("obstacles", [])
     
     async def execute(self):
-        dt = 0.02
+        dt = 0.05
         self.car['x'], self.car['y'], yaw, self.car['v'] = self.ego.next_state(dt, self.actuator)
         self.car['t'] = math.degrees(yaw)
     

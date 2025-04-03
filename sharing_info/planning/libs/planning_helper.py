@@ -141,12 +141,18 @@ def get_possible_successor(node, prior='Right'):
 
         successor = most_successor
     else:
-        if prior == 'Left':
-            i = 0
-        else:
-            i = -1
-        successor = lanelets[node]['successor'][i]
-
+        if lanelets[node]['laneNo'] is not None:
+            lane_num = int(lanelets[node]['laneNo'])
+            for s in lanelets[node]['successor']:
+                if int(lanelets[s]['laneNo']) == lane_num:
+                    successor = s
+                    break
+        if successor is None:
+            if prior == 'Left':
+                i = 0
+            else:
+                i = -1
+            successor = lanelets[node]['successor'][i]
     return successor
 
 def get_whole_neighbor(node):
@@ -198,23 +204,22 @@ def get_neighbor(node):
 
 def gaussian_smoothing_2d(points, sigma=1):
     wx, wy = zip(*points)
-    smoothed_wx = gaussian_filter1d(wx, sigma=sigma)
-    smoothed_wy = gaussian_filter1d(wy, sigma=sigma)
+    smoothed_wx = gaussian_filter1d(wx, sigma=sigma, mode='nearest')
+    smoothed_wy = gaussian_filter1d(wy, sigma=sigma, mode='nearest')
     return list(zip(smoothed_wx, smoothed_wy))
 
-def smooth_interpolate(points, precision):
+def smooth_interpolate(points):
+    precision = 1
     points = filter_same_points(points)
-    smoothed_path = gaussian_smoothing_2d(points)
-    if len(smoothed_path) < 2:
-        return points
-    wx, wy = zip(*smoothed_path)
+    wx, wy = zip(*points)
     itp = QuadraticSplineInterpolate(list(wx), list(wy))
     itp_points = []
-    for ds in np.arange(0.0, itp.s[-1], precision):
+    num_points = int((itp.s[-1] - itp.s[0]) / precision) + 1
+    for ds in np.linspace(itp.s[0], itp.s[-1], num_points):
         x, y = itp.calc_position(ds)
         itp_points.append((float(x), float(y)))
-
     return itp_points
+
 
 def filter_same_points(points):
     filtered_points = []

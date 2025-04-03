@@ -35,7 +35,7 @@ class LocalPathPlanner:
         self.threshold_gap = 2.5
 
         self.t_reaction_change = 2
-        self.minimum_distance = 30
+        self.minimum_distance = 40
         self.d_lane = 3.5
         self.velocity_range = [0, 80]
         self.theta_range = [15, 20]
@@ -48,6 +48,7 @@ class LocalPathPlanner:
         self.confirm_safety = False
         self.check_safety = []
         self.intersection_radius = 1.5
+        self.inter_pt = None
     
     def update_value(self,car, user_input, target_info, target_path, dangerous_obstacle):
         self.local_pose = [car['x'], car['y']]
@@ -57,7 +58,7 @@ class LocalPathPlanner:
         self.target_signal = target_info[1]
         self.target_velocity = target_info[2]
         if len(target_path) > 4:
-            self.target_path = phelper.smooth_interpolate(target_path, 1)
+            self.target_path = phelper.smooth_interpolate(target_path)
         self.dangerous_obstacle = dangerous_obstacle
     
     def current_lane_waypoints(self, local_pose): 
@@ -101,12 +102,13 @@ class LocalPathPlanner:
                 self.change_state = False
                 return 'INIT'
             else: # if merging rejected
-                if self.temp_signal != self.target_signal and self.target_signal == 5: #Target merging rejected
-                    self.temp_signal = 3
-                    self.change_state = False
-                    return 'STRAIGHT'
-                else:
-                    return 'CHANGING'
+                # if self.temp_signal != self.target_signal and self.target_signal == 5: #Target merging rejected
+                #     self.temp_signal = 3
+                #     self.change_state = False
+                #     return 'STRAIGHT'
+                # else:
+                #     
+                return 'CHANGING'
     
     def get_change_path(self, sni,  path_len, to=1):
         wps, uni = self.phelper.get_straight_path(sni, path_len)
@@ -148,8 +150,10 @@ class LocalPathPlanner:
     def make_path(self, pstate, local_pos):
         start_pose = local_pos 
         idnidx0 = self.phelper.lanelet_matching(start_pose)
+
         if idnidx0 == None:
             return None
+        
         if pstate == 'CHANGE':
             l_buffer_change = max(0, self.minimum_distance - (self.current_velocity * self.t_reaction_change))
             l_tr1 = self.current_velocity*self.t_reaction_change + l_buffer_change
@@ -183,10 +187,10 @@ class LocalPathPlanner:
             local_path = tr1+tr3
         elif pstate == 'CHANGING':
             prev_len = len(self.local_path)
-            l_tr3 = prev_len-len(tr1)
+            l_tr3 = prev_len-len(tr1) 
             idnidx2 = self.phelper.lanelet_matching(self.local_path[-1])
             tr3, _ = self.phelper.get_straight_path(idnidx2, l_tr3)
-            local_path = tr1
+            local_path = tr1+tr3
         else:
             local_path = tr1
 
@@ -199,6 +203,7 @@ class LocalPathPlanner:
         find = False
         inter_idx = 0
         l_target = 0
+        inter_pt = None
 
         for hi, hwp in enumerate(self.target_path):
             if find:
@@ -206,22 +211,23 @@ class LocalPathPlanner:
             for ti, twp in enumerate(self.local_path):
                 if self.is_insied_circle(twp, hwp, self.intersection_radius):
                     inter_idx = ti
+                    inter_pt = twp
                     l_target = hi
                     find = True
                     break
-
+                       
         if find and not self.confirm_safety and self.target_signal != 0:
+            self.inter_pt = inter_pt
             now_idx = phelper.find_nearest_idx(self.local_path, self.local_pose)
             l_o1 = (inter_idx-now_idx)
             l_o2 = self.current_velocity * ((l_target)/self.target_velocity) if self.target_velocity != 0 else 0
             l_o3 = l_o1-l_o2
-            d_TC = self.current_velocity*self.t_reaction_change
+            d_TC = self.current_velocity*self.t_reaction_change+1
                       
             if inter_idx <= now_idx+10:
                 safety = 0  
             else:
                 safety = 1 if l_o3 > d_TC else 2 # 1 : Safe, 2 : Dangerous
-            
             #TODO
             # safety = 1 #safe mode (scenario 1, scenario 3)
             # safety = 2 #dangerous mode (scenario 2)
@@ -238,12 +244,21 @@ class LocalPathPlanner:
                 if len(self.check_safety) == 4:
                     self.confirm_safety = True
 
+        elif self.is_insied_circle(self.inter_pt, self.local_pose, self.intersection_radius):
+            self.safety = 0
+            self.inter_pt = None
+
     def is_insied_circle(self, pt1, pt2, radius):
+        if pt1 is None or pt2 is None:
+            return False
         distance = math.sqrt((pt1[0]-pt2[0])**2+(pt1[1]-pt2[1])**2)
         if distance <=  radius:
             return True
         else:
             return False
+    
+    def get_interpt(self):
+        return self.inter_pt
     
     def execute(self):
         if self.local_pose is None or self.local_pose[0] == 'inf':
@@ -252,16 +267,15 @@ class LocalPathPlanner:
             caution = self.phelper.calc_caution_by_ttc(self.dangerous_obstacle, self.local_pose, self.current_velocity)
         else:
             caution = False
-
         caution = False
-
+        
         pstate = self.check_planner_state(caution)
         self.local_path = self.make_path(pstate, self.local_pose)
         if self.local_path is None or len(self.local_path) <= 0:
             return [self.local_pose],[self.local_pose],[self.local_pose],self.local_lane_number, caution, self.safety
         local_waypoints, self.local_lane_number = self.current_lane_waypoints(self.local_pose)
         limit_local_path = self.phelper.limit_path_length(self.local_path, self.max_path_len)
-        self.local_path = phelper.smooth_interpolate(self.local_path, 1)
+        self.local_path = phelper.smooth_interpolate(self.local_path)
         if self.local_lane_number != self.prev_lane_number:
             self.pre_lane_number = self.local_lane_number
         

@@ -27,6 +27,8 @@ class SharingInfo():
         self.limit_local_path = None
         self.local_waypoints = None
         self.local_lane_number = None
+        self.vp_result = 0
+        self.target_signal = 0
 
     def update_value(self):
         self.lpp.update_value(self.RM.car, self.RM.user_input, self.RM.target_info, self.RM.target_path, self.RM.dangerous_obstacle)
@@ -36,14 +38,30 @@ class SharingInfo():
         lpp_result = self.lpp.execute()
         if lpp_result is not None:
             return lpp_result
-        
+
+    def velocity_planning(self):
+        if self.RM.target_velocity != self.RM.user_input['target_velocity']:
+            self.RM.target_velocity = self.RM.user_input['target_velocity']
+            self.vp_result = self.RM.user_input['target_velocity']
+        else:
+            target_signal = self.RM.target_info[1] 
+            if self.target_signal != target_signal and target_signal == 5:
+                self.target_signal = target_signal
+                self.vp_result = self.vp_result - (5/3.6)
+            elif self.target_signal != target_signal and target_signal == 0:
+                self.target_signal = target_signal
+                self.vp_result = self.vp_result + (5/3.6)
+        return self.vp_result
+    
     def execute(self):
         rate = rospy.Rate(20)
         while not rospy.is_shutdown():
             self.update_value()
             lpp_result = self.path_planning()
             if lpp_result is not None:
-                self.RM.publish(lpp_result)
+                vp_result = self.velocity_planning()
+                self.RM.publish(lpp_result, vp_result)
+                self.RM.publish_inter_pt(self.lpp.get_interpt())
             rate.sleep()
 
 

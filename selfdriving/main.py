@@ -30,7 +30,7 @@ class SelfDriving():
     def update_values(self):
         self.car = self.RM.car
         self.local_path = sdhelper.upsample_path_1m(self.RM.local_path)
-        self.ct.update_value(self.RM.user_input['target_velocity'], self.car, self.local_path)
+        self.ct.update_value(self.RM.target_velocity, self.car, self.local_path)
 
     async def control(self):
         while not rospy.is_shutdown():

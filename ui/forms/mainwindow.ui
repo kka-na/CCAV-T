@@ -446,7 +446,7 @@
                 </font>
                </property>
                <property name="minimum">
-                <number>30</number>
+                <number>25</number>
                </property>
                <property name="maximum">
                 <number>80</number>
