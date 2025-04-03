@@ -15,11 +15,11 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 class SharingInfo():
-    def __init__(self, type, map_name):
+    def __init__(self, type, map_name, test):
         self.map = MAP(map_name)
         self.lpp = LocalPathPlanner(self.map, type)
         self.oh = ObstacleHandler(self.lpp.phelper)
-        self.RM = ROSManager(type, self.map, self.oh)
+        self.RM = ROSManager(type, test, self.map, self.oh)
         self.set_values()
     
     def set_values(self):
@@ -49,14 +49,16 @@ class SharingInfo():
 
 def main():
     signal.signal(signal.SIGINT, signal_handler)
-    if len(sys.argv) != 3 :
+    if len(sys.argv) != 4 :
         type = 'ego'
         map_name = 'Solbat'
+        test = 0
     else:
         type = str(sys.argv[1])
         map_name = str(sys.argv[2])
+        test = int(sys.argv[3])
     
-    si = SharingInfo(type, map_name)
+    si = SharingInfo(type, map_name, test)
     si.execute()
 
 if __name__=="__main__":

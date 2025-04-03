@@ -9,11 +9,13 @@ from geometry_msgs.msg import Quaternion
 from jsk_recognition_msgs.msg import BoundingBoxArray
 from visualization_msgs.msg import MarkerArray
 from std_msgs.msg import Float32MultiArray,Bool
-    
+
+
 class ROSManager:
-    def __init__(self, type, map, oh):
+    def __init__(self, type,test,  map, oh):
         rospy.init_node(f'{type}_share_info')
         self.type = type
+        self.test = test
         self.map = map
         self.oh = oh
         self.set_values()
@@ -34,7 +36,15 @@ class ROSManager:
         self.enu2geo_transformter = Transformer.from_proj(proj_enu, proj_wgs84)
 
     def set_protocol(self):
-        rospy.Subscriber(f'/{self.type}/TargetShareInfo', ShareInfo, self.target_share_info_cb) 
+
+        if self.test == 1:
+            if self.type == 'ego':
+                rospy.Subscriber('/target/EgoShareInfo', ShareInfo, self.target_share_info_cb)
+            else:
+                rospy.Subscriber('/ego/EgoShareInfo', ShareInfo, self.target_share_info_cb)
+        else:
+            rospy.Subscriber(f'/{self.type}/TargetShareInfo', ShareInfo, self.target_share_info_cb) 
+
         rospy.Subscriber('/novatel/oem7/inspva', INSPVA, self.novatel_inspva_cb)
         rospy.Subscriber('/novatel/oem7/odom', Odometry, self.novatel_odom_cb)
         rospy.Subscriber('/mobinha/perception/lidar/track_box', BoundingBoxArray, self.lidar_cluster_cb)

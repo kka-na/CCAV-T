@@ -13,8 +13,9 @@ from std_msgs.msg import Float32MultiArray
 from rviz_utils import *
 
 class Visualizer:
-    def __init__(self, type):
+    def __init__(self, type, test):
         self.type = type
+        self.test = test
         rospy.init_node(f'{type}_visualizer', anonymous=False)
         self.set_values()
         self.set_protocols()
@@ -43,7 +44,15 @@ class Visualizer:
         self.pub_ego_obstacles_viz = rospy.Publisher(f'{self.type}/visualizer/ego_obstacles', MarkerArray, queue_size=1)
         
         rospy.Subscriber(f'/{self.type}/EgoShareInfo', ShareInfo, self.ego_share_info_cb)
-        rospy.Subscriber(f'/{self.type}/TargetShareInfo', ShareInfo, self.target_share_info_cb)
+
+        if self.test == 1:
+            if self.type == 'ego':
+                rospy.Subscriber('/target/EgoShareInfo', ShareInfo, self.target_share_info_cb)
+            else:
+                rospy.Subscriber('/ego/EgoShareInfo', ShareInfo, self.target_share_info_cb)
+        else:
+            rospy.Subscriber(f'/{self.type}/TargetShareInfo', ShareInfo, self.target_share_info_cb) 
+            
 
         rospy.loginfo("Visualizer set")
         rospy.spin()
@@ -98,4 +107,5 @@ class Visualizer:
 
 if __name__ == "__main__":
     type = str(sys.argv[1])# sim, ego, target
-    visualizer = Visualizer(type)
+    test = int(sys.argv[2]) #0:false 1:true
+    visualizer = Visualizer(type,test)

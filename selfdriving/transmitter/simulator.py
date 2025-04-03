@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import tf
-import asyncio
+import yaml
 
 import math
 import sys
@@ -43,8 +43,8 @@ class Simulator:
         self.car = {'state':0, 'x': 0, 'y':0,'t': 0,'v': 0}
         self.actuator = {'steer': 0, 'accel': 0, 'brake': 0}
         self.obstacles = []
-        self.set_ego(map)
 
+        self.set_ego(map)
         self.set_protocol(type)
     
     def set_protocol(self,type):
@@ -83,34 +83,18 @@ class Simulator:
         pass
 
     def set_ego(self, map):
-        if map == 'Pangyo':
-            self.ego = Vehicle(-10.687, 0.029, -3.079)
-            self.obstacles = [[-34.195, 0.133, -3.129, 3, 1], [-22.365, -3.371, 3.076, 5, 1]]
-        elif map == 'KIAPI_Racing':
-            self.ego = Vehicle(0, 0, 1.664)
-        elif map == 'Solbat':
-            if self.scenario == 1:
-                if self.type == 'target':
-                    self.ego = Vehicle(967.679, -687.232, -0.696)
-                else:
-                    self.ego = Vehicle(976.832, -690.212, -0.695)
-                self.obstacles=[[1165.085, -836.513, -0.661, -13, 1]]
-            elif self.scenario == 2:
-                if self.type == 'target':
-                    self.ego = Vehicle(1295.802, -941.692, -0.686)
-                else:
-                    self.ego = Vehicle(1308.494, -951.816, -0.6905)
-                self.obstacles=[[1392.366, -1016.544, -0.637, -13, 1]]
-            else:
-                if self.type == 'target':
-                    self.ego = Vehicle( 1505.094, -1104.367, -0.635)
-                else:
-                    self.ego = Vehicle( 1519.274, -1111.868, -0.635)
-                self.obstacles = [[1605.827, -1178.705, -0.711, -13, 1]]
-                    
+        with open("./transmitter/yaml/ego_pose.yaml", "r") as f:
+            config = yaml.safe_load(f)
+        
+        map_config = config.get(map, {})
+        scenario_data = map_config.get(self.scenario, map_config.get("default", {}))
+        type_data = scenario_data.get(self.type, {})
+        ego_pose = type_data.get("ego", [0,0,0])
+        self.ego = Vehicle(*ego_pose)
+        self.obstacles = scenario_data.get("obstacles", [])
     
     async def execute(self):
-        dt = 0.05
+        dt = 0.02
         self.car['x'], self.car['y'], yaw, self.car['v'] = self.ego.next_state(dt, self.actuator)
         self.car['t'] = math.degrees(yaw)
     

@@ -18,12 +18,12 @@ def signal_handler(sig, frame):
     QApplication.quit()
 
 class MyApp(QMainWindow):
-    def __init__(self, type):
+    def __init__(self, type, test):
         form_class = uic.loadUiType("./forms/mainwindow.ui")[0]
         super(MyApp, self).__init__()
         self.ui = form_class()
         self.ui.setupUi(self)
-        self.RM = RosManager(type)
+        self.RM = RosManager(type, test)
         self.type = type
 
         self.set_values()
@@ -147,7 +147,8 @@ class MyApp(QMainWindow):
 def main():
     app = QApplication(sys.argv)
     type = sys.argv[1]
-    ex = MyApp(type)
+    test = int(sys.argv[2])
+    ex = MyApp(type, test)
     ex.show()
     signal.signal(signal.SIGINT, signal_handler)
     app.exec_()

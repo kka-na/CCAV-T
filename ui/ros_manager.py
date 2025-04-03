@@ -6,8 +6,9 @@ from std_msgs.msg import Float32MultiArray
 
 
 class RosManager:
-    def __init__(self, type):
+    def __init__(self, type, test):
         self.type = type
+        self.test = test
         rospy.init_node(f"{type}_ui")
         self.start_time = None
         self.set_values()
@@ -33,7 +34,15 @@ class RosManager:
 
     def set_protocol(self):
         rospy.Subscriber(f'/{self.type}/EgoShareInfo', ShareInfo, self.ego_share_info_cb)
-        rospy.Subscriber(f'/{self.type}/TargetShareInfo', ShareInfo, self.target_share_info_cb)
+
+        if self.test == 1:
+            if self.type == 'ego':
+                rospy.Subscriber('/target/EgoShareInfo', ShareInfo, self.target_share_info_cb)
+            else:
+                rospy.Subscriber('/ego/EgoShareInfo', ShareInfo, self.target_share_info_cb)
+        else:
+            rospy.Subscriber(f'/{self.type}/TargetShareInfo', ShareInfo, self.target_share_info_cb) 
+            
         rospy.Subscriber(f'/{self.type}/CommunicationPerformance', Float32MultiArray, self.communication_performance_cb)
 
         self.pub_user_input = rospy.Publisher(f'/{self.type}/user_input', Float32MultiArray, queue_size=1)
