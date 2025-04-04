@@ -34,8 +34,8 @@ class LocalPathPlanner:
         self.temp_signal = 0
         self.threshold_gap = 2.5
 
-        self.t_reaction_change = 2
-        self.minimum_distance = 40
+        self.t_reaction_change = 3
+        self.minimum_distance = 50
         self.d_lane = 3.5
         self.velocity_range = [0, 80]
         self.theta_range = [15, 20]
@@ -102,13 +102,12 @@ class LocalPathPlanner:
                 self.change_state = False
                 return 'INIT'
             else: # if merging rejected
-                # if self.temp_signal != self.target_signal and self.target_signal == 5: #Target merging rejected
-                #     self.temp_signal = 3
-                #     self.change_state = False
-                #     return 'STRAIGHT'
-                # else:
-                #     
-                return 'CHANGING'
+                if self.temp_signal != self.target_signal and self.target_signal == 5: #Target merging rejected
+                    self.temp_signal = 3
+                    self.change_state = False
+                    return 'STRAIGHT'
+                else:
+                    return 'CHANGING'
     
     def get_change_path(self, sni,  path_len, to=1):
         wps, uni = self.phelper.get_straight_path(sni, path_len)
@@ -156,7 +155,7 @@ class LocalPathPlanner:
         
         if pstate == 'CHANGE':
             l_buffer_change = max(0, self.minimum_distance - (self.current_velocity * self.t_reaction_change))
-            l_tr1 = self.current_velocity*self.t_reaction_change + l_buffer_change
+            l_tr1 = self.current_velocity*self.t_reaction_change + l_buffer_change + 5
         elif pstate == 'EMERGENCY_CHANGE':
             l_tr1 = self.current_velocity*(self.t_reaction_change-0.5)
         else:
