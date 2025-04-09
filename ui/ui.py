@@ -39,6 +39,7 @@ class MyApp(QMainWindow):
         self.selfdriving_buttons = [self.ui.stopButton, self.ui.startButton]
         self.radio_map = {self.ui.radioCLM: 1, self.ui.radioETrA : 2}
         self.check_map = {self.ui.check1 : 1, self.ui.check2 : 2, self.ui.check3 : 3, self.ui.check4 : 4, self.ui.check5:5, self.ui.check6:6}
+        self.sub_scenario_map = {self.ui.typeA:1,self.ui.typeB:2, self.ui.typeC:3}
 
         self.ego_signal, self.target_signal = 0,0
 
@@ -117,6 +118,10 @@ class MyApp(QMainWindow):
         for checkbox, value in self.check_map.items():
             if checkbox.isChecked():
                 self.RM.user_input[4] = value
+                break
+        for type, value in self.sub_scenario_map.items():
+            if radio.isChecked():
+                self.RM.user_input[5] = value
                 break
         self.check_timer()
 

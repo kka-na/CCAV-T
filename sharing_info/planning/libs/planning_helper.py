@@ -123,7 +123,6 @@ def get_merged_point(idnidx, path_len, to=1):
 
         return [u_n, u_i]
     
-
 def get_possible_successor(node, prior='Right'):
     successor = None
     left_lanes, right_lanes, me = get_whole_neighbor(node)

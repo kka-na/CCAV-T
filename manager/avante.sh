@@ -10,4 +10,6 @@ python3 main.py target 0 out &
 cd ../selfdriving
 python3 main.py target avante Midan &
 cd ../utils
-python3 make_data.py target
+python3 make_data.py target &
+cd ~/Documents/bags/0409
+rosbag record -a

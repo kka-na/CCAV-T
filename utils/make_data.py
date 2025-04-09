@@ -2,6 +2,7 @@
 import signal
 import rospy
 import math
+import time
 import sys
 import csv
 import os
@@ -33,14 +34,29 @@ class MakeData:
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         sc_name = 'CLM' if sc_type == 1 else 'ETrA'
-        sc_name = f'{sc_name}_{sc_number}_{sc_target_vel}'
+        a = 'a'
+        if self.type == 'target':
+            if self.target_velocity in [30, 50]:
+                a = 'b'
+            elif self.target_velocity in [35, 55]:
+                a = 'c'
+            else:
+                a = 'a'
+        else:
+            if self.sub_scenario == 2:
+                a = 'b'
+            elif self.sub_scenario == 3:
+                a = 'c'
+            else:
+                a = 'a'
+        sc_name = f'{sc_name}{sc_number}{a}_{sc_target_vel}'
         
         self.csv_file = os.path.join(log_dir, f"{sc_name}_{timestamp}.csv")
 
         if not os.path.exists(self.csv_file):
             with open(self.csv_file, mode='w', newline='') as file:
                 writer = csv.writer(file)
-                writer.writerow(["state", "signal", "x", "y", "car_heading", "car_velocity",
+                writer.writerow(["timestamp", "state", "signal", "x", "y", "car_heading", "car_velocity",
                                  "lateral_acc", "longitudinal_acc", "pitch_rate", "roll_rate", "yaw_rate", "packet_rate",
                                  "rtt", "speed", "delay", "car_distance"])
 
@@ -54,8 +70,9 @@ class MakeData:
         self.comm_perform = [0,0,0, 0] #packet rate, rtt, speed, delay
         self.car_distance = 0
 
-        self.state, self.signal = 0,0
+        self.state, self.signal, self.target_velocity = 0,0, 0
         self.csv_initiation = False
+        self.sub_scenario = 1
 
     def set_protocols(self, type):
         rospy.Subscriber('/novatel/oem7/corrimu', CORRIMU, self.novatel_corrimu_cb)
@@ -68,6 +85,7 @@ class MakeData:
         self.car_pos = [msg.pose.x, msg.pose.y]
         self.car_heading = msg.pose.theta
         self.car_velocity = msg.velocity.data
+        self.car_signal = msg.signal.data
 
     def novatel_corrimu_cb(self, msg: CORRIMU):
         self.car_accel = [msg.lateral_acc, msg.longitudinal_acc]
@@ -79,20 +97,23 @@ class MakeData:
 
     def user_input_cb(self, msg:Float32MultiArray):
         self.state, self.signal = int(msg.data[0]), int(msg.data[1])
-        if not self.csv_initiation:
+        target_velocity = int(msg.data[2]*3.6)
+        if not self.csv_initiation and self.target_velocity != target_velocity:
             self.csv_initiation = True
-            self.init_csv(int(msg.data[2]*3.6), int(msg.data[3]), int(msg.data[4]))
+            self.target_velocity = target_velocity
+            self.init_csv(target_velocity, int(msg.data[3]), int(msg.data[4]))
+            self.sub_scenario = int(msg.data[5])
         
         # if self.csv_initiation and self.state == 0:
         #     self.csv_initiation = False
-
 
     def write_to_csv(self):
         if not self.csv_initiation:
             return
         with open(self.csv_file, mode='a', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow([self.state, self.signal, self.car_pos[0], self.car_pos[1], self.car_heading,
+
+            writer.writerow([time.time(), self.state, self.signal, self.car_pos[0], self.car_pos[1], self.car_heading,
                              self.car_velocity, self.car_accel[0], self.car_accel[1], self.car_rotation[0], self.car_rotation[1], self.car_rotation[2],
                              self.comm_perform[0], self.comm_perform[1], self.comm_perform[2], self.comm_perform[3],
                              self.car_distance])

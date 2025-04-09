@@ -17,7 +17,7 @@ class RosManager:
     def set_values(self):
         self.Hz = 10
         self.rate = rospy.Rate(self.Hz)
-        self.user_input = [0,0,0,0,0] # selfdriving, signal, target_velocity, scenario_type, scenario_number
+        self.user_input = [0,0,0,0,0,0] # selfdriving, signal, target_velocity, scenario_type, scenario_number, sub_scenario
         self.signals = {
             'ego': 0,
             'target': 0

@@ -82,6 +82,9 @@ class Simulator:
     
     def set_user_input(self, msg):
         scenario = int(msg['scenario_number'])
+        scenario_type = int(msg['scenario_type'])
+        if scenario_type == 2:
+            scenario = scenario+6
         if self.scenario != scenario:
             self.scenario = scenario
             self.set_ego() 
