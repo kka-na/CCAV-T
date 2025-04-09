@@ -102,13 +102,13 @@ class LocalPathPlanner:
                 self.change_state = False
                 return 'INIT'
             else: # if merging rejected
-                # if self.temp_signal != self.target_signal and self.target_signal == 5: #Target merging rejected
-                #     self.temp_signal = 3
-                #     self.change_state = False
-                #     return 'STRAIGHT'
-                # else:
-                #     
-                return 'CHANGING'
+                if self.temp_signal != self.target_signal and self.target_signal == 5: #Target merging rejected
+                    self.temp_signal = 3
+                    self.change_state = False
+                    return 'STRAIGHT'
+                else:
+                    
+                    return 'CHANGING'
     
     def get_change_path(self, sni,  path_len, to=1):
         wps, uni = self.phelper.get_straight_path(sni, path_len)
@@ -216,8 +216,7 @@ class LocalPathPlanner:
                     find = True
                     break
         
-        self.current_velocity = 30/3.6
-        self.target_velocity = 30/3.6
+        
         if find and not self.confirm_safety and self.target_signal != 0:
             self.inter_pt = inter_pt
             now_idx = phelper.find_nearest_idx(self.local_path, self.local_pose)

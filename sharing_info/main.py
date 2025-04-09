@@ -45,12 +45,12 @@ class SharingInfo():
             self.vp_result = self.RM.user_input['target_velocity']
         else:
             target_signal = self.RM.target_info[1] 
-            if self.target_signal != target_signal and target_signal == 5:
-                self.target_signal = target_signal
-                self.vp_result = self.vp_result - (7/3.6)
-            elif self.target_signal != target_signal and target_signal == 0:
-                self.target_signal = target_signal
-                self.vp_result = self.vp_result + (7/3.6)
+            # if self.target_signal != target_signal and target_signal == 5:
+            #     self.target_signal = target_signal
+            #     self.vp_result = self.vp_result - (7/3.6)
+            # elif self.target_signal != target_signal and target_signal == 0:
+            #     self.target_signal = target_signal
+            #     self.vp_result = self.vp_result + (7/3.6)
         return self.vp_result
     
     def execute(self):

@@ -43,6 +43,7 @@ class MakeData:
             else:
                 a = 'a'
         else:
+            print(self.sub_scenario)
             if self.sub_scenario == 2:
                 a = 'b'
             elif self.sub_scenario == 3:
