@@ -23,11 +23,11 @@ class ROSManager:
     
     def set_values(self):
         self.car = {'fix': 'No','x': 0, 'y': 0, 't': 0, 'v': 0}
-        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 0, 'scenario_type':1, 'scenario_number':1}
+        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 0, 'scenario_type':1, 'scenario_number':1, 'with':1}
         self.lidar_obstacles = []
         self.dangerous_obstacle = []
         self.obstacle_caution = False
-        self.target_info = [0,0,0]
+        self.target_info = [0,0,0, 0, 0]
         self.target_path = []
         self.target_velocity = 0
 
@@ -77,7 +77,7 @@ class ROSManager:
         self.car['v'] = msg.z
 
     def target_share_info_cb(self, msg:ShareInfo):
-        self.target_info  = [int(msg.state.data), int(msg.signal.data), float(msg.velocity.data)]
+        self.target_info  = [int(msg.state.data), int(msg.signal.data), float(msg.velocity.data),msg.pose.x, msg.pose.y]
         path = []
         for pts in msg.paths:
             path.append([pts.pose.x, pts.pose.y])
@@ -89,6 +89,8 @@ class ROSManager:
         self.user_input['target_velocity'] = msg.data[2]
         self.user_input['scenario_type'] = int(msg.data[3])
         self.user_input['scenario_number'] = int(msg.data[4])
+        self.user_input['with'] = int(msg.data[6])
+
 
     def lidar_cluster_cb(self, msg):
         obstacles = []

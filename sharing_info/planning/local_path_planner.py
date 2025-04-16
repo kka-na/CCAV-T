@@ -35,7 +35,7 @@ class LocalPathPlanner:
         self.threshold_gap = 2.5
 
         self.t_reaction_change = 2
-        self.minimum_distance = 50
+        self.minimum_distance = 50 if self.type == 'ego' else 80
         self.d_lane = 3.5
         self.velocity_range = [0, 80]
         self.theta_range = [15, 20]
@@ -49,14 +49,23 @@ class LocalPathPlanner:
         self.check_safety = []
         self.intersection_radius = 1.5
         self.inter_pt = None
+        self.target_pose = [0,0]
+
+        self.with_coop = True
+        self.bsd_range = [50, 5]
+        self.ttz_th = 5
+        self.bsd = False
+        self.bsd_cnt = 0
     
     def update_value(self,car, user_input, target_info, target_path, dangerous_obstacle):
         self.local_pose = [car['x'], car['y']]
         self.current_velocity = car['v']
         self.current_signal = user_input['signal']
         self.scenario = (user_input['scenario_type'],user_input['scenario_number'])
+        self.with_coop = True if user_input['with'] == 1 else False
         self.target_signal = target_info[1]
         self.target_velocity = target_info[2]
+        self.target_pose = [target_info[3], target_info[4]]
         if len(target_path) > 4:
             self.target_path = phelper.smooth_interpolate(target_path)
         self.dangerous_obstacle = dangerous_obstacle
@@ -100,14 +109,13 @@ class LocalPathPlanner:
             idnidx = self.phelper.lanelet_matching(self.local_pose)
             if idnidx[0] == self.change_id:
                 self.change_state = False
-                return 'INIT'
+                return 'STRAIGHT'
             else: # if merging rejected
-                if self.temp_signal != self.target_signal and self.target_signal == 5: #Target merging rejected
+                if (self.temp_signal != self.target_signal and self.target_signal == 5) or self.bsd: #Target merging rejected
                     self.temp_signal = 3
                     self.change_state = False
                     return 'STRAIGHT'
                 else:
-                    
                     return 'CHANGING'
     
     def get_change_path(self, sni,  path_len, to=1):
@@ -197,7 +205,7 @@ class LocalPathPlanner:
         return local_path
 
     def merge_safety_calc(self):
-        if self.local_path is None or len(self.target_path) < 2 or self.target_signal == 0:
+        if self.local_path is None or len(self.target_path) < 2:
             self.safety = 0 #MERGE ALGORITHM FAIL
 
         find = False
@@ -216,45 +224,49 @@ class LocalPathPlanner:
                     find = True
                     break
         
-        
-        if find and not self.confirm_safety and self.target_signal != 0:
+        if self.inter_pt is not None:
+            if self.is_insied_circle(self.inter_pt, self.local_pose, self.intersection_radius):
+                self.safety = 0
+                self.confirm_safety = False
+                self.check_safety = []
+                self.inter_pt = None
+
+        if find and not self.confirm_safety and self.target_signal in [1,2]:
             self.inter_pt = inter_pt
             now_idx = phelper.find_nearest_idx(self.local_path, self.local_pose)
             l_o1 = (inter_idx-now_idx)
             l_o2 = self.current_velocity * ((l_target)/self.target_velocity) if self.target_velocity != 0 else 0
             l_o3 = l_o1-l_o2
-            d_TC = self.current_velocity*(self.t_reaction_change-0.8)
+            d_TC = self.current_velocity*(self.t_reaction_change)
 
-            print(l_o1, l_target, l_o2, l_o3, d_TC)
-
-            if inter_idx <= now_idx+10:
+            if inter_idx <= now_idx+5:
                 safety = 0  
             else:
-                if l_o3 < -2:
-                    safety = 1
-                else:
-                    safety = 1 if l_o3 > d_TC else 2 # 1 : Safe, 2 : Dangerous
+                safety = 1 if abs(l_o3) > d_TC else 2 # 1 : Safe, 2 : Dangerous
             
+            #print(abs(l_o3), d_TC, safety)
+
             #TODO
             # safety = 1 #safe mode (scenario 1, scenario 3)
             # safety = 2 #dangerous mode (scenario 2)
 
              # Safety 확인 로직
             if self.safety != safety:
-                if not self.check_safety:
+                if len(self.check_safety) < 1:
                     self.check_safety.append(safety)
                     self.safety = safety
-                else:
-                    self.confirm_safety = True
+                    
             else:
                 self.check_safety.append(safety)
-                if len(self.check_safety) == 4:
+                if len(self.check_safety) > 20:
                     self.confirm_safety = True
-
-        elif self.is_insied_circle(self.inter_pt, self.local_pose, self.intersection_radius):
-            self.safety = 0
-            self.inter_pt = None
-
+        
+        elif self.safety == 2:
+            if not self.is_insied_circle(self.inter_pt, self.local_pose, self.intersection_radius):
+                self.confirm_safety = False
+                self.check_safety = []
+                self.inter_pt = None
+            
     def is_insied_circle(self, pt1, pt2, radius):
         if pt1 is None or pt2 is None:
             return False
@@ -267,6 +279,26 @@ class LocalPathPlanner:
     def get_interpt(self):
         return self.inter_pt
     
+    def calc_bsd(self):
+        bsd = False
+        if self.current_signal in [1,2]:
+            ts, td = self.phelper.object_to_frenet(self.local_path, self.target_pose)
+            if abs(ts) < self.bsd_range[0] and abs(td) < self.bsd_range[1]:
+                d = abs(ts)-6
+                v_rel = abs(self.target_velocity - self.current_velocity)
+                ttz = d/v_rel
+                if ttz < self.ttz_th:
+                    bsd = True
+                    self.bsd = bsd
+                    self.temp_signal = 3
+        if self.bsd:
+            if self.bsd_cnt < 15:
+                self.bsd_cnt += 1
+            else:
+                self.bsd = False
+                self.bsd_cnt = 0
+        return self.bsd
+
     def execute(self):
         if self.local_pose is None or self.local_pose[0] == 'inf':
             return None
@@ -286,8 +318,11 @@ class LocalPathPlanner:
         if self.local_lane_number != self.prev_lane_number:
             self.pre_lane_number = self.local_lane_number
         
-        if self.type == 'target':
-            self.merge_safety_calc()
+        bsd = False
+        if self.with_coop:
+            if self.type == 'target':
+                self.merge_safety_calc()
+        else:
+            bsd = self.calc_bsd()
 
-        return self.local_path, limit_local_path, local_waypoints, self.local_lane_number, caution, self.safety
-
+        return self.local_path, limit_local_path, local_waypoints, self.local_lane_number, caution, self.safety, bsd

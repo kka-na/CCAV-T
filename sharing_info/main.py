@@ -7,6 +7,7 @@ import setproctitle
 setproctitle.setproctitle("sharing_info")
 from ros_manager import ROSManager
 from planning.local_path_planner import LocalPathPlanner
+from planning.velocity_planner import VelocityPlanner
 from perception.obstacle_handler import ObstacleHandler
 
 from hd_map.map import MAP
@@ -18,6 +19,7 @@ class SharingInfo():
     def __init__(self, type, map_name, test):
         self.map = MAP(map_name)
         self.lpp = LocalPathPlanner(self.map, type)
+        self.vp = VelocityPlanner(type)
         self.oh = ObstacleHandler(self.lpp.phelper)
         self.RM = ROSManager(type, test, self.map, self.oh)
         self.set_values()
@@ -32,6 +34,7 @@ class SharingInfo():
 
     def update_value(self):
         self.lpp.update_value(self.RM.car, self.RM.user_input, self.RM.target_info, self.RM.target_path, self.RM.dangerous_obstacle)
+        self.vp.update_value(self.RM.user_input, self.RM.car, self.RM.target_info)
         self.oh.update_value(self.RM.car, self.lpp.local_path) 
 
     def path_planning(self):
@@ -39,19 +42,9 @@ class SharingInfo():
         if lpp_result is not None:
             return lpp_result
 
-    def velocity_planning(self):
-        if self.RM.target_velocity != self.RM.user_input['target_velocity']:
-            self.RM.target_velocity = self.RM.user_input['target_velocity']
-            self.vp_result = self.RM.user_input['target_velocity']
-        else:
-            target_signal = self.RM.target_info[1] 
-            # if self.target_signal != target_signal and target_signal == 5:
-            #     self.target_signal = target_signal
-            #     self.vp_result = self.vp_result - (7/3.6)
-            # elif self.target_signal != target_signal and target_signal == 0:
-            #     self.target_signal = target_signal
-            #     self.vp_result = self.vp_result + (7/3.6)
-        return self.vp_result
+    def velocity_planning(self, lpp_result):
+        vp_result = self.vp.execute(lpp_result)
+        return vp_result
     
     def execute(self):
         rate = rospy.Rate(20)
@@ -59,7 +52,7 @@ class SharingInfo():
             self.update_value()
             lpp_result = self.path_planning()
             if lpp_result is not None:
-                vp_result = self.velocity_planning()
+                vp_result = self.velocity_planning(lpp_result)
                 self.RM.publish(lpp_result, vp_result)
                 self.RM.publish_inter_pt(self.lpp.get_interpt())
             rate.sleep()

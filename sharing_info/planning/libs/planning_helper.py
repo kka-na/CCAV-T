@@ -343,3 +343,38 @@ def calc_caution_by_ttc(obstacle, local_pose, ego_vel, th=10):
         return True
     else:
         return False
+
+def object_to_frenet(path, obj_pose):
+    if path is None:
+        return None
+    if len(path) > 0:  
+        centerline = np.array([(point[0], point[1]) for point in path])
+        if centerline.shape[0] < 2:
+            return None  # Or handle this case accordingly
+
+        point = np.array(obj_pose)
+
+        tangents = np.gradient(centerline, axis=0)
+        tangents = tangents / np.linalg.norm(tangents, axis=1)[:, np.newaxis]
+        
+        normals = np.column_stack([-tangents[:, 1], tangents[:, 0]])
+        
+        distances = np.linalg.norm(centerline - point, axis=1)
+        
+        closest_index = np.argmin(distances)
+        closest_point = centerline[closest_index]
+        tangent = tangents[closest_index]
+        normal = normals[closest_index]
+        
+        vector_to_point = point - closest_point
+        d = np.dot(vector_to_point, normal)
+
+        s = np.sum(np.linalg.norm(np.diff(centerline[:closest_index + 1], axis=0), axis=1))
+
+        vector_from_start = point - centerline[0]  
+        if np.dot(tangents[0], vector_from_start) < 0:  
+            s = -np.linalg.norm(vector_from_start)  
+
+        return s, d
+    else:
+        return None

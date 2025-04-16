@@ -1,0 +1,25 @@
+CLM:
+1:
+  slower: O
+  same: O
+  faster: X
+2:
+  slower: X
+  same: O
+  faster: O
+3:
+  slower: O
+  same: X
+  faster: O
+4:
+  slower: O
+  same: X
+  faster: O
+5:
+  slower: X
+  same: X
+  faster: O
+6:
+  slower: X
+  same: X
+  faster: O

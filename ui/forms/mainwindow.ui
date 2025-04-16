@@ -6,15 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1800</width>
+    <width>1400</width>
     <height>900</height>
    </rect>
   </property>
   <property name="font">
    <font>
-    <family>Manjari</family>
-    <weight>75</weight>
-    <bold>true</bold>
+    <family>Meera</family>
+    <pointsize>13</pointsize>
    </font>
   </property>
   <property name="windowTitle">
@@ -31,7 +30,7 @@
    <string notr="true"/>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout_4">
+   <layout class="QGridLayout" name="gridLayout_12">
     <item row="0" column="0">
      <widget class="QWidget" name="widget_7" native="true">
       <property name="sizePolicy">
@@ -50,6 +49,14 @@
              <horstretch>0</horstretch>
              <verstretch>1</verstretch>
             </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <family>Meera</family>
+             <pointsize>13</pointsize>
+             <weight>50</weight>
+             <bold>false</bold>
+            </font>
            </property>
            <property name="styleSheet">
             <string notr="true">background-color: rgb(238, 238, 236);</string>
@@ -75,7 +82,7 @@
                  <property name="font">
                   <font>
                    <family>Manjari</family>
-                   <pointsize>30</pointsize>
+                   <pointsize>20</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
@@ -99,7 +106,7 @@
                  <property name="font">
                   <font>
                    <family>Manjari</family>
-                   <pointsize>30</pointsize>
+                   <pointsize>20</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
@@ -126,6 +133,14 @@
              <verstretch>2</verstretch>
             </sizepolicy>
            </property>
+           <property name="font">
+            <font>
+             <family>Meera</family>
+             <pointsize>13</pointsize>
+             <weight>50</weight>
+             <bold>false</bold>
+            </font>
+           </property>
            <property name="styleSheet">
             <string notr="true">background-color: rgb(238, 238, 236);</string>
            </property>
@@ -142,17 +157,23 @@
                <item row="1" column="1">
                 <widget class="QLabel" name="targetLabel">
                  <property name="sizePolicy">
-                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                   <horstretch>0</horstretch>
+                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                   <horstretch>5</horstretch>
                    <verstretch>0</verstretch>
                   </sizepolicy>
                  </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>80</height>
+                  </size>
+                 </property>
                  <property name="font">
                   <font>
-                   <family>Manjari</family>
+                   <family>Meera</family>
                    <pointsize>14</pointsize>
-                   <weight>75</weight>
-                   <bold>true</bold>
+                   <weight>50</weight>
+                   <bold>false</bold>
                   </font>
                  </property>
                  <property name="styleSheet">
@@ -171,17 +192,23 @@
                <item row="0" column="1">
                 <widget class="QLabel" name="egoLabel">
                  <property name="sizePolicy">
-                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                   <horstretch>0</horstretch>
+                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                   <horstretch>5</horstretch>
                    <verstretch>0</verstretch>
                   </sizepolicy>
                  </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>80</height>
+                  </size>
+                 </property>
                  <property name="font">
                   <font>
-                   <family>Manjari</family>
+                   <family>Meera</family>
                    <pointsize>14</pointsize>
-                   <weight>75</weight>
-                   <bold>true</bold>
+                   <weight>50</weight>
+                   <bold>false</bold>
                   </font>
                  </property>
                  <property name="styleSheet">
@@ -199,6 +226,17 @@
                </item>
                <item row="0" column="0">
                 <widget class="QLabel" name="label">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                   <horstretch>1</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="font">
+                  <font>
+                   <family>Meera</family>
+                  </font>
+                 </property>
                  <property name="text">
                   <string>Ego</string>
                  </property>
@@ -209,6 +247,17 @@
                </item>
                <item row="1" column="0">
                 <widget class="QLabel" name="label_2">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                   <horstretch>1</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="font">
+                  <font>
+                   <family>Meera</family>
+                  </font>
+                 </property>
                  <property name="text">
                   <string>Target</string>
                  </property>
@@ -230,6 +279,14 @@
              <horstretch>0</horstretch>
              <verstretch>1</verstretch>
             </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <family>Meera</family>
+             <pointsize>13</pointsize>
+             <weight>50</weight>
+             <bold>false</bold>
+            </font>
            </property>
            <property name="styleSheet">
             <string notr="true">background-color: rgb(238, 238, 236);</string>
@@ -255,7 +312,7 @@
                  <property name="font">
                   <font>
                    <family>Manjari</family>
-                   <pointsize>30</pointsize>
+                   <pointsize>20</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
@@ -279,7 +336,7 @@
                  <property name="font">
                   <font>
                    <family>Manjari</family>
-                   <pointsize>30</pointsize>
+                   <pointsize>20</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
@@ -303,7 +360,7 @@
                  <property name="font">
                   <font>
                    <family>Manjari</family>
-                   <pointsize>30</pointsize>
+                   <pointsize>20</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
@@ -326,7 +383,7 @@
                  </property>
                  <property name="font">
                   <font>
-                   <pointsize>30</pointsize>
+                   <pointsize>20</pointsize>
                   </font>
                  </property>
                  <property name="text">
@@ -348,6 +405,14 @@
              <verstretch>2</verstretch>
             </sizepolicy>
            </property>
+           <property name="font">
+            <font>
+             <family>Meera</family>
+             <pointsize>13</pointsize>
+             <weight>50</weight>
+             <bold>false</bold>
+            </font>
+           </property>
            <property name="styleSheet">
             <string notr="true">background-color: rgb(238, 238, 236);</string>
            </property>
@@ -360,129 +425,312 @@
             </attribute>
             <layout class="QVBoxLayout" name="verticalLayout">
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_2">
-               <item>
-                <widget class="QRadioButton" name="radioCLM">
-                 <property name="text">
-                  <string>CLM</string>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="radioETrA">
-                 <property name="text">
-                  <string>ETrA</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
+              <widget class="QWidget" name="widget_3" native="true">
+               <layout class="QGridLayout" name="gridLayout_7">
+                <item row="0" column="0">
+                 <layout class="QHBoxLayout" name="horizontalLayout_4">
+                  <item>
+                   <widget class="QRadioButton" name="radioWith">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>With Coop</string>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QRadioButton" name="radioWithout">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Without Coop</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
              </item>
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_5">
-               <item>
-                <widget class="QRadioButton" name="typeA">
-                 <property name="text">
-                  <string>A</string>
-                 </property>
-                 <property name="checked">
-                  <bool>false</bool>
-                 </property>
-                 <property name="autoExclusive">
-                  <bool>false</bool>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="typeB">
-                 <property name="text">
-                  <string>B</string>
-                 </property>
-                 <property name="autoExclusive">
-                  <bool>false</bool>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="typeC">
-                 <property name="text">
-                  <string>C</string>
-                 </property>
-                 <property name="autoExclusive">
-                  <bool>false</bool>
-                 </property>
-                </widget>
-               </item>
-              </layout>
+              <widget class="Line" name="line">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
              </item>
              <item>
-              <layout class="QGridLayout" name="gridLayout">
-               <item row="0" column="0">
-                <widget class="QCheckBox" name="check1">
-                 <property name="text">
-                  <string>Scenario 1</string>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
-                 </property>
-                 <property name="autoExclusive">
-                  <bool>false</bool>
-                 </property>
-                </widget>
-               </item>
-               <item row="0" column="2">
-                <widget class="QCheckBox" name="check3">
-                 <property name="text">
-                  <string>Scenario 3</string>
-                 </property>
-                 <property name="autoExclusive">
-                  <bool>false</bool>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="2">
-                <widget class="QCheckBox" name="check6">
-                 <property name="text">
-                  <string>Scenario 6</string>
-                 </property>
-                 <property name="autoExclusive">
-                  <bool>false</bool>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="1">
-                <widget class="QCheckBox" name="check5">
-                 <property name="text">
-                  <string>Scenario 5</string>
-                 </property>
-                 <property name="autoExclusive">
-                  <bool>false</bool>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="0">
-                <widget class="QCheckBox" name="check4">
-                 <property name="text">
-                  <string>Scenario 4</string>
-                 </property>
-                 <property name="autoExclusive">
-                  <bool>false</bool>
-                 </property>
-                </widget>
-               </item>
-               <item row="0" column="1">
-                <widget class="QCheckBox" name="check2">
-                 <property name="text">
-                  <string>Scenario 2</string>
-                 </property>
-                 <property name="autoExclusive">
-                  <bool>false</bool>
-                 </property>
-                </widget>
-               </item>
-              </layout>
+              <widget class="QWidget" name="widget_4" native="true">
+               <layout class="QGridLayout" name="gridLayout_4">
+                <item row="0" column="0">
+                 <layout class="QHBoxLayout" name="horizontalLayout_2">
+                  <item>
+                   <widget class="QRadioButton" name="radioCLM">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>CLM</string>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QRadioButton" name="radioETrA">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>ETrA</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="Line" name="line_2">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QWidget" name="widget_5" native="true">
+               <layout class="QGridLayout" name="gridLayout_8">
+                <item row="0" column="0">
+                 <layout class="QHBoxLayout" name="horizontalLayout_5">
+                  <item>
+                   <widget class="QRadioButton" name="typeA">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Slower</string>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QRadioButton" name="typeB">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Same</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QRadioButton" name="typeC">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Faster</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="Line" name="line_3">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QWidget" name="widget_8" native="true">
+               <layout class="QGridLayout" name="gridLayout_9">
+                <item row="0" column="0">
+                 <layout class="QGridLayout" name="gridLayout">
+                  <item row="0" column="0">
+                   <widget class="QCheckBox" name="check1">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Scenario 1</string>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="2">
+                   <widget class="QCheckBox" name="check3">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Scenario 3</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="2">
+                   <widget class="QCheckBox" name="check6">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Scenario 6</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="1">
+                   <widget class="QCheckBox" name="check5">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Scenario 5</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="0">
+                   <widget class="QCheckBox" name="check4">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Scenario 4</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1">
+                   <widget class="QCheckBox" name="check2">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Scenario 2</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="Line" name="line_4">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
              </item>
              <item>
               <widget class="QSpinBox" name="velocityBox">
@@ -494,7 +742,10 @@
                </property>
                <property name="font">
                 <font>
-                 <pointsize>22</pointsize>
+                 <family>Meera</family>
+                 <pointsize>24</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
                 </font>
                </property>
                <property name="minimum">
@@ -516,13 +767,26 @@
                <property name="font">
                 <font>
                  <family>Manjari</family>
-                 <pointsize>30</pointsize>
+                 <pointsize>20</pointsize>
                  <weight>75</weight>
                  <bold>true</bold>
                 </font>
                </property>
                <property name="text">
                 <string>✔️</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="testCase">
+               <property name="font">
+                <font>
+                 <family>Meera</family>
+                 <pointsize>14</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Test Case : </string>
                </property>
               </widget>
              </item>
@@ -564,6 +828,14 @@
            <height>16777215</height>
           </size>
          </property>
+         <property name="font">
+          <font>
+           <family>Meera</family>
+           <pointsize>13</pointsize>
+           <weight>50</weight>
+           <bold>false</bold>
+          </font>
+         </property>
          <property name="styleSheet">
           <string notr="true">background-color: rgb(238, 238, 236);</string>
          </property>
@@ -588,6 +860,57 @@
          </widget>
         </widget>
        </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox">
+         <property name="title">
+          <string>Plot Points</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_11">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="gridLayout_10">
+            <item row="0" column="2">
+             <widget class="QRadioButton" name="radioPlot3">
+              <property name="text">
+               <string>3</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QRadioButton" name="radioPlot2">
+              <property name="text">
+               <string>2</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QRadioButton" name="radioPlot1">
+              <property name="text">
+               <string>1</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QPushButton" name="newButton">
+              <property name="text">
+               <string>New</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="2">
+             <widget class="QPushButton" name="loadButton">
+              <property name="text">
+               <string>Load</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
       </layout>
      </widget>
     </item>
@@ -598,6 +921,14 @@
         <horstretch>2</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <family>Meera</family>
+        <pointsize>13</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_9">
        <item>
@@ -610,7 +941,10 @@
          </property>
          <property name="font">
           <font>
-           <pointsize>11</pointsize>
+           <family>Meera</family>
+           <pointsize>13</pointsize>
+           <weight>50</weight>
+           <bold>false</bold>
           </font>
          </property>
          <property name="styleSheet">
@@ -642,7 +976,8 @@
              </property>
              <property name="font">
               <font>
-               <pointsize>8</pointsize>
+               <family>Meera</family>
+               <pointsize>10</pointsize>
               </font>
              </property>
              <property name="autoFillBackground">
@@ -738,6 +1073,12 @@
                <verstretch>7</verstretch>
               </sizepolicy>
              </property>
+             <property name="font">
+              <font>
+               <family>Meera</family>
+               <pointsize>11</pointsize>
+              </font>
+             </property>
              <layout class="QVBoxLayout" name="verticalLayout_11">
               <item>
                <layout class="QVBoxLayout" name="RTTLayout"/>
@@ -752,7 +1093,8 @@
                 </property>
                 <property name="font">
                  <font>
-                  <pointsize>9</pointsize>
+                  <family>Meera</family>
+                  <pointsize>11</pointsize>
                  </font>
                 </property>
                 <property name="text">
@@ -776,7 +1118,8 @@
                 </property>
                 <property name="font">
                  <font>
-                  <pointsize>9</pointsize>
+                  <family>Meera</family>
+                  <pointsize>11</pointsize>
                  </font>
                 </property>
                 <property name="text">
@@ -800,7 +1143,8 @@
                 </property>
                 <property name="font">
                  <font>
-                  <pointsize>9</pointsize>
+                  <family>Meera</family>
+                  <pointsize>11</pointsize>
                  </font>
                 </property>
                 <property name="text">
@@ -824,7 +1168,8 @@
                 </property>
                 <property name="font">
                  <font>
-                  <pointsize>9</pointsize>
+                  <family>Meera</family>
+                  <pointsize>11</pointsize>
                  </font>
                 </property>
                 <property name="text">
@@ -848,7 +1193,8 @@
                 </property>
                 <property name="font">
                  <font>
-                  <pointsize>9</pointsize>
+                  <family>Meera</family>
+                  <pointsize>11</pointsize>
                  </font>
                 </property>
                 <property name="text">

@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidgetItem
 from PyQt5.QtCore import QTimer
 from PyQt5 import uic
 from functools import partial
+import yaml 
 
 app = None
 
@@ -40,6 +41,8 @@ class MyApp(QMainWindow):
         self.radio_map = {self.ui.radioCLM: 1, self.ui.radioETrA : 2}
         self.check_map = {self.ui.check1 : 1, self.ui.check2 : 2, self.ui.check3 : 3, self.ui.check4 : 4, self.ui.check5:5, self.ui.check6:6}
         self.sub_scenario_map = {self.ui.typeA:1,self.ui.typeB:2, self.ui.typeC:3}
+        self.radio_with = {self.ui.radioWith: 1, self.ui.radioWithout: 2}
+        self.radio_point = {self.ui.radioPlot1: 1, self.ui.radioPlot2: 2, self.ui.radioPlot3: 3}
 
         self.ego_signal, self.target_signal = 0,0
 
@@ -97,6 +100,34 @@ class MyApp(QMainWindow):
 
         self.ui.egoLabel.setText(self.state_string[self.ego_signal])
         self.ui.targetLabel.setText(self.state_string[self.target_signal])
+        self.ui.testCase.setText(self.RM.test_case)
+
+    def click_new(self):
+        for radio, value in self.radio_point.items():
+            if radio.isChecked():
+                point_num = value
+        with open(f"./yaml/{self.type}_point.yaml", "r") as f:
+            config = yaml.safe_load(f)
+
+        config[str(point_num)] = {
+            'point': self.RM.ego_pos
+        }
+
+        with open(f"./yaml/{self.type}_point.yaml", "w") as f:
+            yaml.safe_dump(config, f)
+        self.RM.publish_plot_point(self.RM.ego_pos)
+
+    def click_load(self):
+        for radio, value in self.radio_point.items():
+            if radio.isChecked():
+                point_num = value
+        with open(f"./yaml/{self.type}_point.yaml", "r") as f:
+            config = yaml.safe_load(f)
+        
+        point_config = config[str(point_num)]
+        point = point_config['point']
+
+        self.RM.publish_plot_point(point)
 
         
     def click_signal(self, value):
@@ -119,9 +150,13 @@ class MyApp(QMainWindow):
             if checkbox.isChecked():
                 self.RM.user_input[4] = value
                 break
-        for type, value in self.sub_scenario_map.items():
-            if radio.isChecked():
+        for sub_scenario, value in self.sub_scenario_map.items():
+            if sub_scenario.isChecked():
                 self.RM.user_input[5] = value
+                break
+        for radio, value in self.radio_with.items():
+            if radio.isChecked():
+                self.RM.user_input[6] = value
                 break
         self.check_timer()
 
@@ -129,7 +164,7 @@ class MyApp(QMainWindow):
         if not self.sig_in:
             self.sig_in = True
             self.user_input_timer.start(300)
-            QTimer.singleShot(1600, self.stop_user_input_timer)
+            QTimer.singleShot(5000, self.stop_user_input_timer)
         else:
             self.stop_user_input_timer()
     
@@ -185,6 +220,8 @@ class MyApp(QMainWindow):
         for i in range(0,2):
             self.selfdriving_buttons[i].clicked.connect(partial(self.click_selfdriving, int(i)))
         self.ui.setButton.clicked.connect(self.click_set)
+        self.ui.newButton.clicked.connect(self.click_new)
+        self.ui.loadButton.clicked.connect(self.click_load)
     
 
 def main():
