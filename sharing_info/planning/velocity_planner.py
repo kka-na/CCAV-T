@@ -16,9 +16,7 @@ class VelocityPlanner:
         self.temp_vel = self.max_vel
         self.temp_sig = self.tar_sig
         self.with_coop = True
-        self.decel_value = 0.05
-        
-
+        self.decel_value = 0.0002
     
     def update_value(self, user_input, ego, target):
         self.max_vel = user_input['target_velocity']
@@ -35,17 +33,17 @@ class VelocityPlanner:
         else:
             if self.with_coop:
                 if self.tar_sig == 5 or self.temp_sig == 5:
-                    self.temp_vel = self.temp_vel - (self.max_vel*self.decel_value)
+                    self.temp_vel = min(20/3.6, self.temp_vel - (self.max_vel*self.decel_value))
                     self.temp_sig = self.tar_sig
 
                 elif self.tar_sig == 0 or self.tar_sig == 4:
-                    self.temp_vel = min(self.max_vel, self.temp_vel + (self.max_vel-self.temp_vel)*self.decel_value)
+                    self.temp_vel = min(self.max_vel, self.temp_vel + (self.max_vel-self.temp_vel)*0.008)
                     self.temp_sig = self.tar_sig
             else:
                 bsd = lpp_result[6]
                 if bsd:
-                    self.temp_vel = self.temp_vel - (self.max_vel*self.decel_value)
+                    self.temp_vel = self.temp_vel - (self.max_vel*(0.8))
                 else:
-                    self.temp_vel = min(self.max_vel, self.temp_vel + (self.max_vel-self.temp_vel)*self.decel_value)
+                    self.temp_vel = min(self.max_vel, self.temp_vel + (self.max_vel-self.temp_vel)*0.05)
 
         return self.temp_vel

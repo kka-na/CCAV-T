@@ -11,5 +11,5 @@ cd ../selfdriving
 python3 main.py ego ioniq5 Midan &
 cd ../utils
 python3 make_data.py ego &
-cd ~/Documents/bags/0409
+cd ~/Documents/bags/0416
 rosbag record -a
