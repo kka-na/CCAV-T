@@ -137,13 +137,13 @@ class LocalPathPlanner:
         c_pt = wps[-1]
         l_id, r_id = self.phelper.get_neighbor(uni[0])
         n_id = r_id if r_id is not None else l_id
-        if self.scenario[0] == 2: #if ETrA Scenario,
-            if self.type == 'ego':
-                if self.scenario[1] in [2, 4, 5]:
-                    n_id = l_id
-            if self.type == 'target':
-                if self.scenario[1] in [4, 5]:
-                    n_id = l_id
+        if self.type == 'ego':
+            print(l_id)
+            if self.scenario[1] in [2, 4, 5]:
+                n_id = l_id
+        if self.type == 'target':
+            if self.scenario[1] in [4, 5]:
+                n_id = l_id
 
         if n_id is not None:
             r = self.MAP.lanelets[n_id]['waypoints']
@@ -166,7 +166,8 @@ class LocalPathPlanner:
             l_buffer_change = max(0, self.minimum_distance - (self.current_velocity * self.t_reaction_change))
             l_tr1 = self.current_velocity*self.t_reaction_change + l_buffer_change + 5
         elif pstate == 'EMERGENCY_CHANGE':
-            l_tr1 = self.current_velocity*(self.t_reaction_change-0.5)
+            l_buffer_change = max(0, self.minimum_distance/3- (self.current_velocity * self.t_reaction_change))
+            l_tr1 = self.current_velocity*self.t_reaction_change + l_buffer_change + 5
         else:
             l_tr1 = self.default_len
 
