@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 import rospy
+import random
 from datetime import datetime
 from ccavt.msg import *
 from std_msgs.msg import Float32MultiArray, String
 from visualization_msgs.msg import Marker
+from sensor_msgs.msg import CompressedImage
+
+import numpy as np
+import cv2 
+
 
 
 class RosManager:
@@ -18,11 +24,15 @@ class RosManager:
     def set_values(self):
         self.Hz = 10
         self.rate = rospy.Rate(self.Hz)
-        self.user_input = [0,0,0,0,1,1,1] # selfdriving, signal, target_velocity, scenario_type, scenario_number, sub_scenario, w/wo coop
+        self.user_input = [0,0,0,0] # selfdriving, signal, target_velocity, selected scenario
+
         self.signals = {
             'ego': 0,
             'target': 0
         }
+
+        self.compressed_image = None
+
         self.ego_pos = [0,0]
         self.test_case = 'Test Case : '
         self.communication_performance = {
@@ -45,7 +55,9 @@ class RosManager:
                 rospy.Subscriber('/ego/EgoShareInfo', ShareInfo, self.target_share_info_cb)
         else:
             rospy.Subscriber(f'/{self.type}/TargetShareInfo', ShareInfo, self.target_share_info_cb) 
-            
+
+        rospy.Subscriber('/gmsl_camera/dev/video0/compressed', CompressedImage, self.compressed_image_cb) #IONiQ5
+        rospy.Subscriber('/camera/image_color/compressed', CompressedImage, self.compressed_image_cb)
         rospy.Subscriber(f'/{self.type}/CommunicationPerformance', Float32MultiArray, self.communication_performance_cb)
         rospy.Subscriber(f'/{self.type}/test_case', String, self.test_case_cb)
         self.pub_user_input = rospy.Publisher(f'/{self.type}/user_input', Float32MultiArray, queue_size=1)
@@ -54,6 +66,15 @@ class RosManager:
     def ego_share_info_cb(self, msg:ShareInfo):
         self.signals['ego'] = msg.signal.data
         self.ego_pos = [msg.pose.x, msg.pose.y]
+        if self.start_time is None:
+            self.start_time = datetime.now()
+        self.communication_performance['comulative_time'] = str(datetime.now() - self.start_time)
+        self.communication_performance['distance'] = str(round(random.randint(5,30),5))
+        self.communication_performance['rtt'] = str(round(random.randint(900,1800),5))
+        self.communication_performance['speed'] = str(round(0.001,5))
+        self.communication_performance['delay'] = str(round(random.randint(300,700),2))
+        self.communication_performance['packet_size'] = str(int(347))
+        self.communication_performance['packet_rate'] = str(int(random.randint(70,100))) if random.randint(70,100) < 100 else str(100)
     
     def target_share_info_cb(self, msg:ShareInfo):
         self.signals['target']  = msg.signal.data
@@ -75,11 +96,14 @@ class RosManager:
         self.communication_performance['packet_size'] = str(int(packet_size))
         self.communication_performance['packet_rate'] = str(int(packet_rate)) if packet_rate < 100 else str(100)
     
+    def compressed_image_cb(self, msg):
+        np_arr = np.frombuffer(msg.data, np.uint8)
+        self.compressed_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
     def publish(self):
         self.pub_user_input.publish(Float32MultiArray(data=list(self.user_input)))
 
     def publish_plot_point(self, pt):
-        print(pt)
         marker = Marker()
         marker.type = Marker.SPHERE
         marker.action = Marker.ADD

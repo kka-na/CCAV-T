@@ -14,6 +14,7 @@ class RvizWidget(rviz.VisualizationFrame):
         self.setContentsMargins(0, 0, 0, 0)
         self.setSplashPath('')
         self.initialize()
+        
         reader = rviz.YamlConfigReader()
         config = rviz.Config()
         if type == 'target':

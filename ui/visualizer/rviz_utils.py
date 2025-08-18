@@ -150,11 +150,12 @@ def CarViz(frame_id, name_space, position, color):
 def ObstaclesViz(objects, type):
     marker_array = MarkerArray()
     marker = Marker()
-    if type == 'target':
-        color = [255, 140,33, 1]
-    else:
-        color = [33,255,133, 1]
+    
     for n, obj in enumerate(objects):
+        if type == 'target':
+            color = [255, 140,33, 1]
+        else:
+            color = [33,255,133, 1]
         if obj[4] == 1: #dangerous obstacle
             color = [255,0,0,1]
         marker = ObstacleViz(n+1000, (round(obj[0],1), round(obj[1],1)), obj[2], color)

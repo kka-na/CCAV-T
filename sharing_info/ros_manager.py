@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 import rospy
+
+
 from pyproj import Proj, Transformer
+from threading import Timer
 
 from ccavt.msg import *
 from novatel_oem7_msgs.msg import INSPVA
@@ -8,7 +11,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion
 from jsk_recognition_msgs.msg import BoundingBoxArray
 from visualization_msgs.msg import MarkerArray, Marker
-from std_msgs.msg import Float32MultiArray,Bool
+from std_msgs.msg import Float32MultiArray,Bool, String
 
 
 class ROSManager:
@@ -23,13 +26,23 @@ class ROSManager:
     
     def set_values(self):
         self.car = {'fix': 'No','x': 0, 'y': 0, 't': 0, 'v': 0}
-        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 0, 'scenario_type':1, 'scenario_number':1, 'with':1}
+        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 0, 'scenario':0}
         self.lidar_obstacles = []
         self.dangerous_obstacle = []
         self.obstacle_caution = False
         self.target_info = [0,0,0, 0, 0]
         self.target_path = []
         self.target_velocity = 0
+
+        # Emergency 관련 변수 추가
+        self.emergency_active = False
+        self.emergency_cooldown = False
+        self.emergency_timer = None
+        self.cooldown_timer = None
+        self.emergency_duration = 5.0  # 5초 동안 발행
+        self.cooldown_duration = 50.0  # 50초 동안 발행 금지
+        
+
 
         proj_wgs84 = Proj(proj='latlong', datum='WGS84') 
         proj_enu = Proj(proj='aeqd', datum='WGS84', lat_0=self.map.base_lla[0], lon_0=self.map.base_lla[1], h_0=self.map.base_lla[2])
@@ -48,13 +61,20 @@ class ROSManager:
 
         rospy.Subscriber('/novatel/oem7/inspva', INSPVA, self.novatel_inspva_cb)
         rospy.Subscriber('/novatel/oem7/odom', Odometry, self.novatel_odom_cb)
-        rospy.Subscriber('/mobinha/perception/lidar/track_box', BoundingBoxArray, self.lidar_cluster_cb)
+        if self.type == 'ego':
+            rospy.Subscriber('/mobinha/perception/lidar/track_box', BoundingBoxArray, self.lidar_cluster_cb)
+            
         rospy.Subscriber(f'/{self.type}/user_input',Float32MultiArray, self.user_input_cb)
         rospy.Subscriber(f'/{self.type}/simulator/inform', Quaternion, self.simulator_inform_cb)
 
+        self.pub_emergency_user_input = rospy.Publisher(f'/{self.type}/user_input', Float32MultiArray, queue_size=1)
+
+
         self.pub_ego_share_info = rospy.Publisher(f'/{self.type}/EgoShareInfo', ShareInfo, queue_size=1)
+        self.pub_dangerous_obstacle = rospy.Publisher(f'/{self.type}/dangerous_obstacle', Float32MultiArray, queue_size=1 )
         if self.type == 'ego':
             self.pub_obs_caution = rospy.Publisher(f'{self.type}/obs_caution', Bool, queue_size=1)
+            
         self.pub_lmap_viz = rospy.Publisher('/lmap_viz', MarkerArray, queue_size=10,latch=True)
         self.pub_inter_pt = rospy.Publisher(f'/{self.type}/inter_pt', Marker, queue_size=10)
         self.pub_lmap_viz.publish(self.map.lmap_viz)
@@ -66,7 +86,7 @@ class ROSManager:
         self.car['y'] = n
         self.car['t'] = 90-msg.azimuth
     
-    def novatel_odom_cb(self, msg):
+    def novatel_odom_cb(self, msg): 
         self.car['v'] = msg.twist.twist.linear.x
 
     def simulator_inform_cb(self, msg):
@@ -84,17 +104,21 @@ class ROSManager:
         self.target_path = path 
 
     def user_input_cb(self, msg):
-        self.user_input['state'] = int(msg.data[0])
-        self.user_input['signal'] = int(msg.data[1])
-        self.user_input['target_velocity'] = msg.data[2]
-        self.user_input['scenario_type'] = int(msg.data[3])
-        self.user_input['scenario_number'] = int(msg.data[4])
-        self.user_input['with'] = int(msg.data[6])
-
+        if not self.emergency_active:
+            self.user_input['state'] = int(msg.data[0])
+            self.user_input['signal'] = int(msg.data[1])
+            self.user_input['target_velocity'] = msg.data[2]
+            self.user_input['scenario'] = int(msg.data[3])
+        else:
+            # Emergency 상태 중에는 signal 제외하고만 업데이트
+            self.user_input['state'] = int(msg.data[0])
+            # signal은 업데이트하지 않음 (Emergency 해제 후 기존값 유지)
+            self.user_input['target_velocity'] = msg.data[2]
+            self.user_input['scenario'] = int(msg.data[3])
 
     def lidar_cluster_cb(self, msg):
         obstacles = []
-        dangerous_id = 0
+        dangerous_id = 99999
         min_s = 100
 
         for i, obj in enumerate(msg.boxes):
@@ -124,7 +148,7 @@ class ROSManager:
                 if s < min_s and -1 < d < 1 :
                     dangerous_id = i
                     min_s = s
-
+                    
         lidar_obstacles = []
         for i, obs in enumerate(obstacles):
             if obs[0] == dangerous_id:
@@ -144,6 +168,22 @@ class ROSManager:
             lidar_obstacles.append(obstacle)
 
         self.lidar_obstacles = lidar_obstacles
+    
+    def stop_emergency_publishing(self):
+        """5초 emergency 발행 종료 후 50초 쿨다운 시작"""
+        self.emergency_active = False
+        self.emergency_cooldown = True
+        rospy.loginfo("Emergency publishing stopped - starting 50s cooldown")
+        
+        # 50초 쿨다운 타이머 시작
+        self.cooldown_timer = Timer(self.cooldown_duration, self.reset_emergency_cooldown)
+        self.cooldown_timer.start()
+
+    def reset_emergency_cooldown(self):
+        """50초 쿨다운 해제"""
+        self.emergency_cooldown = False
+        rospy.loginfo("Emergency cooldown finished - ready to publish emergency again")
+
 
     def calc_world_pose(self, x, y):
         la, ln, al = self.enu2geo_transformter.transform(x, y, 5)
@@ -183,6 +223,7 @@ class ROSManager:
         self.pub_ego_share_info.publish(share_info)
         if self.type == 'ego':
             self.pub_obs_caution.publish(Bool(lpp_res[4]))
+        self.pub_dangerous_obstacle.publish(Float32MultiArray(data=list(self.dangerous_obstacle)))
     
     def publish_inter_pt(self, inter_pt):
         if inter_pt is not None:
@@ -204,3 +245,40 @@ class ROSManager:
             marker.pose.position.y = inter_pt[1]
             marker.pose.position.z = 1.0
             self.pub_inter_pt.publish(marker)
+    
+    def publish_emergency(self, emergency):
+        """
+        Emergency 상태일 때 5초 동안 signal 값을 7로 변경하여 계속 publish
+        5초 후에는 50초 동안 발행하지 않음 (플래너가 동작하기 때문)
+        """
+        if emergency == 'emergency':
+            # 쿨다운 중이면 발행하지 않음
+            if self.emergency_cooldown:
+                return
+                
+            # Emergency 발행 시작 (처음 한 번만)
+            if not self.emergency_active:
+                self.emergency_active = True
+                rospy.loginfo("Emergency publishing started for 5 seconds")
+                
+                # 기존 타이머가 있으면 취소
+                if self.emergency_timer is not None:
+                    self.emergency_timer.cancel()
+                
+                # 5초 후 발행 중단하고 쿨다운 시작
+                self.emergency_timer = Timer(self.emergency_duration, self.stop_emergency_publishing)
+                self.emergency_timer.start()
+            
+            # Emergency 활성 상태에서만 발행
+            if self.emergency_active:
+                # Emergency user_input 메시지 생성 (signal만 7로 변경)
+                emergency_user_input = Float32MultiArray()
+                emergency_user_input.data = [
+                    float(self.user_input['state']),        # 기존 state 유지
+                    7.0,                                     # signal을 7로 변경
+                    self.user_input['target_velocity'],      # 기존 target_velocity 유지
+                    float(self.user_input['scenario'])       # 기존 scenario 유지
+                ]
+                self.user_input['signal'] = 7
+                # Emergency user_input publish
+                self.pub_emergency_user_input.publish(emergency_user_input)

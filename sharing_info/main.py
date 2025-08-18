@@ -35,7 +35,7 @@ class SharingInfo():
     def update_value(self):
         self.lpp.update_value(self.RM.car, self.RM.user_input, self.RM.target_info, self.RM.target_path, self.RM.dangerous_obstacle)
         self.vp.update_value(self.RM.user_input, self.RM.car, self.RM.target_info)
-        self.oh.update_value(self.RM.car, self.lpp.local_path) 
+        self.oh.update_value(self.RM.car, self.lpp.local_path, self.RM.lidar_obstacles)
 
     def path_planning(self):
         lpp_result = self.lpp.execute()
@@ -45,6 +45,10 @@ class SharingInfo():
     def velocity_planning(self, lpp_result):
         vp_result = self.vp.execute(lpp_result)
         return vp_result
+
+    def perception_handling(self):
+        emergency = self.oh.check_emergency(self.RM.dangerous_obstacle)
+        return emergency
     
     def execute(self):
         rate = rospy.Rate(20)
@@ -53,8 +57,10 @@ class SharingInfo():
             lpp_result = self.path_planning()
             if lpp_result is not None:
                 vp_result = self.velocity_planning(lpp_result)
+                emergency = self.perception_handling()
                 self.RM.publish(lpp_result, vp_result)
                 self.RM.publish_inter_pt(self.lpp.get_interpt())
+                self.RM.publish_emergency(emergency)
             rate.sleep()
 
 

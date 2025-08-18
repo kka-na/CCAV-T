@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1400</width>
-    <height>900</height>
+    <height>1011</height>
    </rect>
   </property>
   <property name="font">
@@ -425,180 +425,7 @@
             </attribute>
             <layout class="QVBoxLayout" name="verticalLayout">
              <item>
-              <widget class="QWidget" name="widget_3" native="true">
-               <layout class="QGridLayout" name="gridLayout_7">
-                <item row="0" column="0">
-                 <layout class="QHBoxLayout" name="horizontalLayout_4">
-                  <item>
-                   <widget class="QRadioButton" name="radioWith">
-                    <property name="font">
-                     <font>
-                      <family>Meera</family>
-                      <pointsize>13</pointsize>
-                      <weight>50</weight>
-                      <bold>false</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>With Coop</string>
-                    </property>
-                    <property name="checked">
-                     <bool>true</bool>
-                    </property>
-                    <property name="autoExclusive">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QRadioButton" name="radioWithout">
-                    <property name="font">
-                     <font>
-                      <family>Meera</family>
-                      <pointsize>13</pointsize>
-                      <weight>50</weight>
-                      <bold>false</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>Without Coop</string>
-                    </property>
-                    <property name="autoExclusive">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </item>
-               </layout>
-              </widget>
-             </item>
-             <item>
               <widget class="Line" name="line">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QWidget" name="widget_4" native="true">
-               <layout class="QGridLayout" name="gridLayout_4">
-                <item row="0" column="0">
-                 <layout class="QHBoxLayout" name="horizontalLayout_2">
-                  <item>
-                   <widget class="QRadioButton" name="radioCLM">
-                    <property name="font">
-                     <font>
-                      <family>Meera</family>
-                      <pointsize>13</pointsize>
-                      <weight>50</weight>
-                      <bold>false</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>CLM</string>
-                    </property>
-                    <property name="checked">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QRadioButton" name="radioETrA">
-                    <property name="font">
-                     <font>
-                      <family>Meera</family>
-                      <pointsize>13</pointsize>
-                      <weight>50</weight>
-                      <bold>false</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>ETrA</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </item>
-               </layout>
-              </widget>
-             </item>
-             <item>
-              <widget class="Line" name="line_2">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QWidget" name="widget_5" native="true">
-               <layout class="QGridLayout" name="gridLayout_8">
-                <item row="0" column="0">
-                 <layout class="QHBoxLayout" name="horizontalLayout_5">
-                  <item>
-                   <widget class="QRadioButton" name="typeA">
-                    <property name="font">
-                     <font>
-                      <family>Meera</family>
-                      <pointsize>13</pointsize>
-                      <weight>50</weight>
-                      <bold>false</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>Slower</string>
-                    </property>
-                    <property name="checked">
-                     <bool>true</bool>
-                    </property>
-                    <property name="autoExclusive">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QRadioButton" name="typeB">
-                    <property name="font">
-                     <font>
-                      <family>Meera</family>
-                      <pointsize>13</pointsize>
-                      <weight>50</weight>
-                      <bold>false</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>Same</string>
-                    </property>
-                    <property name="autoExclusive">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QRadioButton" name="typeC">
-                    <property name="font">
-                     <font>
-                      <family>Meera</family>
-                      <pointsize>13</pointsize>
-                      <weight>50</weight>
-                      <bold>false</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>Faster</string>
-                    </property>
-                    <property name="autoExclusive">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </item>
-               </layout>
-              </widget>
-             </item>
-             <item>
-              <widget class="Line" name="line_3">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
@@ -609,8 +436,8 @@
                <layout class="QGridLayout" name="gridLayout_9">
                 <item row="0" column="0">
                  <layout class="QGridLayout" name="gridLayout">
-                  <item row="0" column="0">
-                   <widget class="QCheckBox" name="check1">
+                  <item row="1" column="1">
+                   <widget class="QCheckBox" name="check5">
                     <property name="font">
                      <font>
                       <family>Meera</family>
@@ -620,28 +447,7 @@
                      </font>
                     </property>
                     <property name="text">
-                     <string>Scenario 1</string>
-                    </property>
-                    <property name="checked">
-                     <bool>true</bool>
-                    </property>
-                    <property name="autoExclusive">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="2">
-                   <widget class="QCheckBox" name="check3">
-                    <property name="font">
-                     <font>
-                      <family>Meera</family>
-                      <pointsize>13</pointsize>
-                      <weight>50</weight>
-                      <bold>false</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>Scenario 3</string>
+                     <string>ETrA2</string>
                     </property>
                     <property name="autoExclusive">
                      <bool>true</bool>
@@ -659,25 +465,7 @@
                      </font>
                     </property>
                     <property name="text">
-                     <string>Scenario 6</string>
-                    </property>
-                    <property name="autoExclusive">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="1">
-                   <widget class="QCheckBox" name="check5">
-                    <property name="font">
-                     <font>
-                      <family>Meera</family>
-                      <pointsize>13</pointsize>
-                      <weight>50</weight>
-                      <bold>false</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>Scenario 5</string>
+                     <string>ETrA3</string>
                     </property>
                     <property name="autoExclusive">
                      <bool>true</bool>
@@ -695,7 +483,25 @@
                      </font>
                     </property>
                     <property name="text">
-                     <string>Scenario 4</string>
+                     <string>ETrA1</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="2">
+                   <widget class="QCheckBox" name="check3">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>CLM3</string>
                     </property>
                     <property name="autoExclusive">
                      <bool>true</bool>
@@ -713,7 +519,28 @@
                      </font>
                     </property>
                     <property name="text">
-                     <string>Scenario 2</string>
+                     <string>CLM2</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="0">
+                   <widget class="QCheckBox" name="check1">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>CLM1</string>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
                     </property>
                     <property name="autoExclusive">
                      <bool>true</bool>
@@ -809,11 +636,59 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
+        <widget class="QTabWidget" name="tabWidget_7">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>1</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <widget class="QWidget" name="tab_5">
+          <attribute name="title">
+           <string>Cam</string>
+          </attribute>
+          <layout class="QGridLayout" name="gridLayout_4">
+           <item row="0" column="0">
+            <widget class="QLabel" name="cameraLabel">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>300</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+       <item>
         <widget class="QTabWidget" name="tabWidget">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
+           <verstretch>3</verstretch>
           </sizepolicy>
          </property>
          <property name="minimumSize">
@@ -906,6 +781,27 @@
               </property>
              </widget>
             </item>
+            <item row="1" column="0">
+             <widget class="QRadioButton" name="radioPlot4">
+              <property name="text">
+               <string>4</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QRadioButton" name="radioPlot5">
+              <property name="text">
+               <string>5</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="2">
+             <widget class="QRadioButton" name="radioPlot6">
+              <property name="text">
+               <string>6</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
          </layout>
@@ -977,7 +873,7 @@
              <property name="font">
               <font>
                <family>Meera</family>
-               <pointsize>10</pointsize>
+               <pointsize>12</pointsize>
               </font>
              </property>
              <property name="autoFillBackground">

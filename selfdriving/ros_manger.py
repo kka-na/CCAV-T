@@ -15,7 +15,7 @@ class ROSManager:
         self.car = {'state':0, 'x': 0, 'y':0,'t':0,'v':0}
         self.local_path = []
         self.target_velocity = 0
-        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 0, 'scenario_type':0, 'scenario_number':0}
+        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 0, 'scenario':0}
 
     def set_protocol(self):
         rospy.Subscriber(f'/{self.type}/EgoShareInfo', ShareInfo, self.ego_share_info_cb)
@@ -37,8 +37,7 @@ class ROSManager:
     def user_input_cb(self, msg):
         self.user_input['state'] = int(msg.data[0])
         self.user_input['signal'] = int(msg.data[1])
-        self.user_input['scenario_type'] = int(msg.data[3])
-        self.user_input['scenario_number'] = int(msg.data[4])
+        self.user_input['scenario'] = int(msg.data[3])
 
     def pub_lh(self, lh):
         marker = Marker()

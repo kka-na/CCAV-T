@@ -23,7 +23,7 @@ class LocalPathPlanner:
         self.local_pose = None
         self.current_velocity = 0.0
         self.current_signal = 0
-        self.scenario = (1,1)
+        self.scenario = 0
         self.target_signal = 0
         self.change_state = False
         self.change_id = None
@@ -51,7 +51,6 @@ class LocalPathPlanner:
         self.inter_pt = None
         self.target_pose = [0,0]
 
-        self.with_coop = True
         self.bsd_range = [50, 5]
         self.ttz_th = 5
         self.bsd = False
@@ -61,8 +60,7 @@ class LocalPathPlanner:
         self.local_pose = [car['x'], car['y']]
         self.current_velocity = car['v']
         self.current_signal = user_input['signal']
-        self.scenario = (user_input['scenario_type'],user_input['scenario_number'])
-        self.with_coop = True if user_input['with'] == 1 else False
+        self.scenario = (user_input['scenario'])
         self.target_signal = target_info[1]
         self.target_velocity = target_info[2]
         self.target_pose = [target_info[3], target_info[4]]
@@ -137,13 +135,9 @@ class LocalPathPlanner:
         c_pt = wps[-1]
         l_id, r_id = self.phelper.get_neighbor(uni[0])
         n_id = r_id if r_id is not None else l_id
-        if self.scenario[0] == 2: #if ETrA Scenario,
-            if self.type == 'ego':
-                if self.scenario[1] in [2, 4, 5]:
-                    n_id = l_id
-            if self.type == 'target':
-                if self.scenario[1] in [4, 5]:
-                    n_id = l_id
+        if self.type == 'ego':
+            if self.scenario == 5:
+                n_id = l_id
 
         if n_id is not None:
             r = self.MAP.lanelets[n_id]['waypoints']
@@ -319,10 +313,8 @@ class LocalPathPlanner:
             self.pre_lane_number = self.local_lane_number
         
         bsd = False
-        if self.with_coop:
-            if self.type == 'target':
-                self.merge_safety_calc()
-        else:
-            bsd = self.calc_bsd()
+        if self.type == 'target':
+            self.merge_safety_calc()
+        # bsd = self.calc_bsd() -> without cooperation
 
         return self.local_path, limit_local_path, local_waypoints, self.local_lane_number, caution, self.safety, bsd

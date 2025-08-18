@@ -1,6 +1,7 @@
 import numpy as np
 import math
 
+import time 
 
 class ObstacleHandler:
     def __init__(self, phelper):
@@ -11,16 +12,21 @@ class ObstacleHandler:
         self.local_pose = None
         self.local_path = None 
         self.prev_local_pose = None
+        self.lidar_obstacles = None
         self.current_heading = 0.0
 
-    def update_value(self, car, local_path):
+        self.stopped_vehicle_start_time = None
+        self.emergency_threshold = 2.0  # 3초
+
+    def update_value(self, car, local_path, lidar_obstacles):
         self.local_pose = [car['x'], car['y']]
         self.current_heading = car['t']
         if self.prev_local_pose is None:
             self.prev_local_pose = self.local_pose
         if local_path is not None:
             self.local_path = local_path
-
+        self.lidar_obstacles = lidar_obstacles
+        
     def check_dimension(self, dimension):
         if dimension[0] > 2 and dimension[1] > 1.5 :
             return True
@@ -123,3 +129,29 @@ class ObstacleHandler:
             return heading
         else:
             return None
+    
+    def check_emergency(self, obs):
+        # obs[4]가 velocity라고 가정
+        if len(obs) < 1 :
+            return 'normal'
+        velocity = obs[4]
+        distance = obs[5]
+        stopped_threshold = 1  # 정지 상태로 간주할 속도 임계값
+        if abs(velocity) < stopped_threshold or distance < 30:
+            # 차량이 멈춘 상태
+            current_time = time.time()  # 또는 rospy.Time.now().to_sec()
+            
+            if self.stopped_vehicle_start_time is None:
+                # 처음 멈춘 것을 감지
+                self.stopped_vehicle_start_time = current_time
+            else:
+                # 멈춘 시간 계산
+                stopped_duration = current_time - self.stopped_vehicle_start_time
+                
+                if stopped_duration >= self.emergency_threshold:
+                    return "emergency"  # 또는 적절한 emergency 상태값
+        else:
+            # 차량이 움직이고 있으면 타이머 리셋
+            self.stopped_vehicle_start_time = None
+        
+        return "normal"  # 또는 적절한 정상 상태값

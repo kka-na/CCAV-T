@@ -36,12 +36,13 @@ class MakeData:
         self.car_velocity = 0
         self.car_accel = [0,0] #lat, long
         self.car_rotation = [0,0,0]
-        self.comm_perform = [0,0,0, 0] #packet rate, rtt, speed, delay
+        self.comm_perform = [0,0,0,0] #packet rate, rtt, speed, delay
         self.car_distance = 0
         self.target_signal = 0
         self.target_car_velocity = 0
 
         self.state, self.target_velocity = 0,0
+        self.scenario = 0 #1~3: CLM1~3, 4~6: ETrA 1~3
         self.csv_initiation = False
         self.sub_scenario = 1
 
@@ -52,37 +53,33 @@ class MakeData:
         rospy.Subscriber(f'/{type}/CommunicationPerformance', Float32MultiArray, self.
         communication_performance_cb)
         rospy.Subscriber(f'/{type}/user_input', Float32MultiArray, self.user_input_cb)
+  
         self.pub_string = rospy.Publisher(f'/{type}/test_case', String, queue_size=1)
 
-    def init_csv(self, sc_target_vel, sc_type, sc_number, sub_sc, _with):
+    def init_csv(self, target_vel):
         log_dir = f"../log/{self.type}"
         os.makedirs(log_dir, exist_ok=True)
-        if sc_target_vel in [29, 49]:
-            sc_target_vel = sc_target_vel+1
+        if target_vel in [29, 49]:
+            target_vel = target_vel+1
 
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        sc_name = 'CLM' if sc_type == 1 else 'ETrA'
-        with_type = 'WC' if _with == 1 else 'WOC'
-         
-        a = 'a'
-        if self.type == 'target':
-            if sc_target_vel in [30, 50]:
-                a = 'b'
-            elif sc_target_vel in [35, 55]:
-                a = 'c'
-            else:
-                a = 'a'
-        else:
-            if sub_sc == 2:
-                a = 'b'
-            elif sub_sc == 3:
-                a = 'c'
-            else:
-                a = 'a'
-    
-        sc_name = f'{with_type}-{sc_name}-{sc_number}{a}-{sc_target_vel}'
+        timestamp = datetime.now().strftime("%m%d%H%M%S")
         
-        self.csv_file = os.path.join(log_dir, f"{timestamp}_{sc_name}.csv")
+        if self.scenario == 1:
+            sc = 'CLM1'
+        elif self.scenario == 2:
+            sc = 'CLM2'
+        elif self.scenario == 3:
+            sc = 'CLM3'
+        elif self.scenario == 4:
+            sc = 'ETrA1'
+        elif self.scenario == 5:
+            sc = 'ETrA2'
+        elif self.scenario == 6:
+            sc = 'ETrA3'
+    
+        sc_name = f'{sc}_{target_vel}'
+        
+        self.csv_file = os.path.join(log_dir, f"[{timestamp}]{sc_name}.csv")
 
         if not os.path.exists(self.csv_file):
             with open(self.csv_file, mode='w', newline='') as file:
@@ -114,11 +111,12 @@ class MakeData:
     def user_input_cb(self, msg:Float32MultiArray):
         self.state = int(msg.data[0])
         target_velocity = int(msg.data[2]*3.6)
-
-        if self.target_velocity != target_velocity :
+        self.scenario = int(msg.data[3])
+        if self.target_velocity != target_velocity and self.scenario != 0:
             self.csv_initiation = True
             self.target_velocity = target_velocity
-            self.init_csv(target_velocity, int(msg.data[3]), int(msg.data[4]), int(msg.data[5]), int(msg.data[6]))
+
+            self.init_csv(target_velocity)
     
     def calc_ttc(self):
         d = abs(self.car_distance)
@@ -132,7 +130,7 @@ class MakeData:
         with open(self.csv_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             ttc = self.calc_ttc()
-            writer.writerow([time.time(), self.state, self.car_signal, self.car_pos[0], self.car_pos[1], self.car_heading,
+            writer.writerow([time.time(), self.state, self.car_signal, self.target_signal, self.car_pos[0], self.car_pos[1], self.car_heading,
                              self.car_velocity, self.car_accel[0], self.car_accel[1], self.car_rotation[0], self.car_rotation[1], self.car_rotation[2],
                              self.comm_perform[0], self.comm_perform[1], self.comm_perform[2], self.comm_perform[3],
                              self.car_distance, ttc])

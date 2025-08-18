@@ -18,7 +18,7 @@ class Transmitter():
     
     def set_values(self, type, car, map):
         if car == 'simulator':
-            self.target = Simulator(type, map, 1)
+            self.target = Simulator(type, map)
         elif car == 'avante':
             self.target = Avante()
         elif car == 'ioniq5':

@@ -36,14 +36,15 @@ class Vehicle:
         return self.x, self.y, self.yaw, self.v
 
 class Simulator:
-    def __init__(self, type, map, scenario):
+    def __init__(self, type, map):
         self.ego = None
         self.type = type
         self.map = map
-        self.scenario = 0
         self.car = {'state':0, 'x': 0, 'y':0,'t': 0,'v': 0}
         self.actuator = {'steer': 0, 'accel': 0, 'brake': 0}
         self.obstacles = []
+
+        self.scenario = 0
 
         self.set_ego()
         self.set_protocol(type)
@@ -81,10 +82,9 @@ class Simulator:
         self.simulator_pub.publish(quat)
     
     def set_user_input(self, msg):
-        scenario = int(msg['scenario_number'])
-        scenario_type = int(msg['scenario_type'])
-        if scenario_type == 2:
-            scenario = scenario+6
+        scenario = int(msg['scenario'])
+        if scenario >= 4:
+            scenario = scenario+3
         if self.scenario != scenario:
             self.scenario = scenario
             self.set_ego() 

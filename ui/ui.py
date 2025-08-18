@@ -7,6 +7,8 @@ setproctitle.setproctitle("ui")
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidgetItem
 from PyQt5.QtCore import QTimer
 from PyQt5 import uic
+from PyQt5.QtGui import QImage, QPixmap
+
 from functools import partial
 import yaml 
 
@@ -38,11 +40,8 @@ class MyApp(QMainWindow):
         self.state_string = ['Normal', 'Left Change', 'Right Change', 'Straight', 'Safe', 'Dangerous', 'Init', 'Emergency']
         self.signal_buttons = {self.ui.leftButton:1, self.ui.rightButton:2, self.ui.straightButton:3,self.ui.eButton:7}
         self.selfdriving_buttons = [self.ui.stopButton, self.ui.startButton]
-        self.radio_map = {self.ui.radioCLM: 1, self.ui.radioETrA : 2}
         self.check_map = {self.ui.check1 : 1, self.ui.check2 : 2, self.ui.check3 : 3, self.ui.check4 : 4, self.ui.check5:5, self.ui.check6:6}
-        self.sub_scenario_map = {self.ui.typeA:1,self.ui.typeB:2, self.ui.typeC:3}
-        self.radio_with = {self.ui.radioWith: 1, self.ui.radioWithout: 2}
-        self.radio_point = {self.ui.radioPlot1: 1, self.ui.radioPlot2: 2, self.ui.radioPlot3: 3}
+        self.radio_point = {self.ui.radioPlot1: 1, self.ui.radioPlot2: 2, self.ui.radioPlot3: 3,self.ui.radioPlot4: 4, self.ui.radioPlot5: 5, self.ui.radioPlot6: 6}
 
         self.ego_signal, self.target_signal = 0,0
 
@@ -62,16 +61,15 @@ class MyApp(QMainWindow):
 
         self.user_input_timer = QTimer(self)
         self.user_input_timer.timeout.connect(self.state_triggered)
-        self.user_input_timer.start(200)
 
         self.user_input_viz_timer = QTimer(self)
         self.user_input_viz_timer.timeout.connect(self.state_triggered_viz)
-        self.user_input_viz_timer.start(1000)
         
 
     def updateUI(self):
         self.comm_perform_update(self.RM.communication_performance)
         self.state_update(self.RM.signals)
+        self.image_update(self.RM.compressed_image)
     
     def comm_perform_update(self, communication_performance):
         self.ui.tableWidget.setStyleSheet('background-color: rgb(238, 238, 236);')
@@ -101,6 +99,15 @@ class MyApp(QMainWindow):
         self.ui.egoLabel.setText(self.state_string[self.ego_signal])
         self.ui.targetLabel.setText(self.state_string[self.target_signal])
         self.ui.testCase.setText(self.RM.test_case)
+
+    def image_update(self, compressed_image):
+        if compressed_image is not None:
+            height, width, channel = compressed_image.shape
+            bytes_per_line = 3 * width
+            q_img = QImage(compressed_image.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
+            pixmap = QPixmap.fromImage(q_img)
+            scaled_pixmap = pixmap.scaled(self.ui.cameraLabel.size(), aspectRatioMode=True)            
+            self.ui.cameraLabel.setPixmap(scaled_pixmap)
 
     def click_new(self):
         for radio, value in self.radio_point.items():
@@ -142,21 +149,9 @@ class MyApp(QMainWindow):
     
     def click_set(self):
         self.RM.user_input[2] = float(self.ui.velocityBox.value()/3.6)
-        for radio, value in self.radio_map.items():
-            if radio.isChecked():
-                self.RM.user_input[3] = value
-                break
         for checkbox, value in self.check_map.items():
             if checkbox.isChecked():
-                self.RM.user_input[4] = value
-                break
-        for sub_scenario, value in self.sub_scenario_map.items():
-            if sub_scenario.isChecked():
-                self.RM.user_input[5] = value
-                break
-        for radio, value in self.radio_with.items():
-            if radio.isChecked():
-                self.RM.user_input[6] = value
+                self.RM.user_input[3] = value
                 break
         self.check_timer()
 
