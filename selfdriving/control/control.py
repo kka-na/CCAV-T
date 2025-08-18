@@ -60,7 +60,7 @@ class Control():
 
     def execute(self):
         acc = self.APID.execute(self.state, self.target_velocity, self.current_velocity)
-        steer, lh= self.PP.execute(self.current_location, self.state, self.local_path, self.current_heading, self.current_velocity)        
+        steer, lh = self.PP.execute(self.current_location, self.state, self.local_path, self.current_heading, self.current_velocity)        
         return [acc, steer], lh
         
 def main():

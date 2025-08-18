@@ -29,7 +29,7 @@ class IONIQ5():
 
         if self.state == 1:
             self.Control['Target_Accel'] = accel
-            self.Control['Target_Brake'] = brake
+            self.Control['Target_Brake'] = brake*0.6
             self.Control['PA_StrAngCmd'] = msg[1]
         else:
             self.Control['Target_Accel'] = 0

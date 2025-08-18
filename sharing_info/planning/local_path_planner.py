@@ -160,7 +160,8 @@ class LocalPathPlanner:
             l_buffer_change = max(0, self.minimum_distance - (self.current_velocity * self.t_reaction_change))
             l_tr1 = self.current_velocity*self.t_reaction_change + l_buffer_change + 5
         elif pstate == 'EMERGENCY_CHANGE':
-            l_tr1 = self.current_velocity*(self.t_reaction_change-0.5)
+            l_buffer_change = max(0, self.minimum_distance/3- (self.current_velocity * self.t_reaction_change))
+            l_tr1 = self.current_velocity*self.t_reaction_change + l_buffer_change + 5
         else:
             l_tr1 = self.default_len
 
@@ -252,14 +253,14 @@ class LocalPathPlanner:
                     
             else:
                 self.check_safety.append(safety)
-                if len(self.check_safety) > 20:
+                if len(self.check_safety) > 10:
                     self.confirm_safety = True
         
-        elif self.safety == 2:
-            if not self.is_insied_circle(self.inter_pt, self.local_pose, self.intersection_radius):
-                self.confirm_safety = False
-                self.check_safety = []
-                self.inter_pt = None
+        # elif self.safety == 2:
+        #     if not self.is_insied_circle(self.inter_pt, self.local_pose, self.intersection_radius):
+        #         self.confirm_safety = False
+        #         self.check_safety = []
+        #         self.inter_pt = None
             
     def is_insied_circle(self, pt1, pt2, radius):
         if pt1 is None or pt2 is None:
@@ -277,14 +278,16 @@ class LocalPathPlanner:
         bsd = False
         if self.current_signal in [1,2]:
             ts, td = self.phelper.object_to_frenet(self.local_path, self.target_pose)
-            if abs(ts) < self.bsd_range[0] and abs(td) < self.bsd_range[1]:
-                d = abs(ts)-6
+            print(ts, td)
+            if ts > self.bsd_range[0] and ts < self.bsd_range[1] and abs(td) < self.bsd_range[1]:
+                d = abs(ts)-8
                 v_rel = abs(self.target_velocity - self.current_velocity)
                 ttz = d/v_rel
                 if ttz < self.ttz_th:
                     bsd = True
                     self.bsd = bsd
                     self.temp_signal = 3
+                print(d, v_rel, ttz, bsd)
         if self.bsd:
             if self.bsd_cnt < 15:
                 self.bsd_cnt += 1

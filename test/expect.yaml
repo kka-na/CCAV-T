@@ -1,25 +1,50 @@
-CLM:
-1:
-  slower: O
-  same: O
-  faster: X
-2:
-  slower: X
-  same: O
-  faster: O
-3:
-  slower: O
-  same: X
-  faster: O
-4:
-  slower: O
-  same: X
-  faster: O
-5:
-  slower: X
-  same: X
-  faster: O
-6:
-  slower: X
-  same: X
-  faster: O
+CLM_30km/h:
+with_Coop:
+  1:
+    same: O
+    faster: X
+  2:
+    slower: X
+    faster: O
+  3:
+    same: X
+    faster: O
+  4:
+    same: X
+    faster: O
+  5:
+    slower: X
+    faster: O
+  6:
+    slower: X
+    faster: O
+without_Coop:
+  1:
+    same: O
+    faster: X
+  2:
+    slower: X
+    faster: O
+  3:
+    same: X
+    faster: O
+  4:
+    same: X
+    faster: O
+  5:
+    slower: X
+    faster: O
+  6:
+    slower: X
+    faster: O
+
+ETrA_30km/h:
+  3:
+  4:
+  5:
+  6:
+ETrA_50km/h:
+  1:
+  2:
+  3:
+  4:
