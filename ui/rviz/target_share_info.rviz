@@ -5,7 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded: ~
       Splitter Ratio: 0.42505592107772827
-    Tree Height: 822
+    Tree Height: 371
   - Class: rviz/Views
     Expanded:
       - /Current View1
@@ -23,7 +23,7 @@ Visualization Manager:
       Marker Topic: /target/visualizer/ego_car
       Name: Ego Marker
       Namespaces:
-        ego_car_marker: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -31,7 +31,7 @@ Visualization Manager:
       Marker Topic: /target/visualizer/ego_car_info
       Name: Ego Info
       Namespaces:
-        ego_car_info: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -47,7 +47,7 @@ Visualization Manager:
       Marker Topic: /target/visualizer/local_target_path
       Name: Target Path
       Namespaces:
-        path: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -55,7 +55,7 @@ Visualization Manager:
       Marker Topic: /target/visualizer/target_car
       Name: Target Marker
       Namespaces:
-        target_car_marker: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -63,7 +63,7 @@ Visualization Manager:
       Marker Topic: /target/visualizer/target_car_info
       Name: Target Info
       Namespaces:
-        target_car_info: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -2648,7 +2648,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 49.481651306152344
+      Distance: 38.3185920715332
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -2664,9 +2664,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.35539865493774414
+      Pitch: 0.41539862751960754
       Target Frame: target_ego_car
-      Yaw: 3.5353856086730957
+      Yaw: 3.595386266708374
     Saved: ~
 Window Geometry:
   Displays:
