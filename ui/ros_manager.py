@@ -6,11 +6,12 @@ from ccavt.msg import *
 from std_msgs.msg import Float32MultiArray, String
 from visualization_msgs.msg import Marker
 from sensor_msgs.msg import CompressedImage
+from PyQt5.QtGui import QImage, QPixmap
+import time
+import threading
 
 import numpy as np
 import cv2 
-
-
 
 class RosManager:
     def __init__(self, type, test):
@@ -18,6 +19,13 @@ class RosManager:
         self.test = test
         rospy.init_node(f"{type}_ui")
         self.start_time = None
+        
+        # 실시간 이미지 처리를 위한 변수들
+        self.image_lock = threading.Lock()
+        self.compressed_image = None
+        self.last_image_time = 0
+        self.frame_skip_count = 0
+        
         self.set_values()
         self.set_protocol()
         
@@ -30,8 +38,6 @@ class RosManager:
             'ego': 0,
             'target': 0
         }
-
-        self.compressed_image = None
 
         self.ego_pos = [0,0]
         self.test_case = 'Test Case : '
@@ -56,8 +62,17 @@ class RosManager:
         else:
             rospy.Subscriber(f'/{self.type}/TargetShareInfo', ShareInfo, self.target_share_info_cb) 
 
-        rospy.Subscriber('/gmsl_camera/dev/video0/compressed', CompressedImage, self.compressed_image_cb) #IONiQ5
-        rospy.Subscriber('/camera/image_color/compressed', CompressedImage, self.compressed_image_cb)
+        # 실시간 이미지를 위한 최적화된 subscriber 설정
+        # queue_size=1: 최신 메시지 1개만 유지
+        # buff_size를 크게 설정: 네트워크 버퍼 최적화
+        # tcp_nodelay=True: TCP Nagle 알고리즘 비활성화로 지연 최소화
+        rospy.Subscriber('/gmsl_camera/dev/video2/compressed', CompressedImage, 
+                        self.compressed_image_cb, queue_size=1, buff_size=2**24, 
+                        tcp_nodelay=True) #IONiQ5
+        rospy.Subscriber('/camera/image_color/compressed', CompressedImage, 
+                        self.compressed_image_cb, queue_size=1, buff_size=2**24,
+                        tcp_nodelay=True)
+        
         rospy.Subscriber(f'/{self.type}/CommunicationPerformance', Float32MultiArray, self.communication_performance_cb)
         rospy.Subscriber(f'/{self.type}/test_case', String, self.test_case_cb)
         self.pub_user_input = rospy.Publisher(f'/{self.type}/user_input', Float32MultiArray, queue_size=1)
@@ -97,8 +112,36 @@ class RosManager:
         self.communication_performance['packet_rate'] = str(int(packet_rate)) if packet_rate < 100 else str(100)
     
     def compressed_image_cb(self, msg):
-        np_arr = np.frombuffer(msg.data, np.uint8)
-        self.compressed_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        """실시간 이미지 처리 - 타임스탬프 검증 제거"""
+        current_time = time.time()
+        
+        # FPS 제한만 적용 (30fps 정도로)
+        if current_time - self.last_image_time < 0.033:  # 33ms
+            return
+            
+        try:
+            # OpenCV 디코딩
+            np_arr = np.frombuffer(msg.data, np.uint8)
+            compressed_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            
+            if compressed_image is not None:
+                height, width, channel = compressed_image.shape
+                bytes_per_line = 3 * width
+                q_img = QImage(compressed_image.data, width, height, 
+                            bytes_per_line, QImage.Format_RGB888).rgbSwapped()
+                pixmap = QPixmap.fromImage(q_img)
+                
+                with self.image_lock:
+                    self.compressed_image = pixmap
+                    self.last_image_time = current_time
+                    
+        except Exception as e:
+            print(f"Image processing error: {e}")
+            
+    def get_latest_image(self):
+        """UI에서 호출할 최신 이미지 반환"""
+        with self.image_lock:
+            return self.compressed_image
 
     def publish(self):
         self.pub_user_input.publish(Float32MultiArray(data=list(self.user_input)))

@@ -47,7 +47,7 @@ class PurePursuit(object):
         steering_angle = math.degrees(steering_angle)
         steering_angle = max(-15, min(steering_angle, 15))
         steer_offset = min(max(current_velocity * MPS_TO_KPH * 0.02 + 0.1, 1), 2.2)
-        if current_velocity * MPS_TO_KPH > 30:
+        if current_velocity * MPS_TO_KPH > 28:
             steering_angle = steering_angle * steer_offset
         steer = np.clip(steering_angle*self.steer_ratio, -500, 500)
         return steer,(lh_point.x, lh_point.y)

@@ -11,6 +11,7 @@ from PyQt5.QtGui import QImage, QPixmap
 
 from functools import partial
 import yaml 
+import time 
 
 app = None
 
@@ -28,6 +29,9 @@ class MyApp(QMainWindow):
         self.ui.setupUi(self)
         self.RM = RosManager(type, test)
         self.type = type
+
+        self.last_image_update_time = 0
+        self.last_displayed_image = None
 
         self.set_values()
         self.set_widgets()
@@ -55,9 +59,15 @@ class MyApp(QMainWindow):
         self.initUI()
     
     def set_timers(self):
+        # 일반 UI 업데이트 (통신 성능, 상태)
         self.timer = QTimer(self)   
         self.timer.timeout.connect(self.updateUI)
-        self.timer.start(100)
+        self.timer.start(30)  # 30ms
+
+        # 실시간 이미지 업데이트를 위한 빠른 타이머
+        self.image_timer = QTimer(self)
+        self.image_timer.timeout.connect(self.update_image)
+        self.image_timer.start(33)  # 33ms (~30 FPS)
 
         self.user_input_timer = QTimer(self)
         self.user_input_timer.timeout.connect(self.state_triggered)
@@ -67,9 +77,30 @@ class MyApp(QMainWindow):
         
 
     def updateUI(self):
+        """이미지를 제외한 UI 요소 업데이트"""
         self.comm_perform_update(self.RM.communication_performance)
         self.state_update(self.RM.signals)
-        self.image_update(self.RM.compressed_image)
+    
+    def update_image(self):
+        """실시간 이미지 업데이트"""
+        current_image = self.RM.get_latest_image()
+        
+        # 새로운 이미지가 있을 때만 업데이트
+        if current_image is not None and current_image != self.last_displayed_image:
+            try:
+                # 스케일링을 빠르게 처리
+                scaled_pixmap = current_image.scaled(
+                    self.ui.cameraLabel.size(), 
+                    aspectRatioMode=True,
+                    transformMode=1  # Qt.FastTransformation for speed
+                )
+                self.ui.cameraLabel.setPixmap(scaled_pixmap)
+                self.last_displayed_image = current_image
+                
+                # 디버그 출력 최소화
+                # print("Image displayed at:", time.time())
+            except Exception as e:
+                print(f"Image display error: {e}")
     
     def comm_perform_update(self, communication_performance):
         self.ui.tableWidget.setStyleSheet('background-color: rgb(238, 238, 236);')
@@ -99,15 +130,6 @@ class MyApp(QMainWindow):
         self.ui.egoLabel.setText(self.state_string[self.ego_signal])
         self.ui.targetLabel.setText(self.state_string[self.target_signal])
         self.ui.testCase.setText(self.RM.test_case)
-
-    def image_update(self, compressed_image):
-        if compressed_image is not None:
-            height, width, channel = compressed_image.shape
-            bytes_per_line = 3 * width
-            q_img = QImage(compressed_image.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
-            pixmap = QPixmap.fromImage(q_img)
-            scaled_pixmap = pixmap.scaled(self.ui.cameraLabel.size(), aspectRatioMode=True)            
-            self.ui.cameraLabel.setPixmap(scaled_pixmap)
 
     def click_new(self):
         for radio, value in self.radio_point.items():

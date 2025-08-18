@@ -120,7 +120,6 @@ class ROSManager:
         obstacles = []
         dangerous_id = 99999
         min_s = 100
-
         for i, obj in enumerate(msg.boxes):
             if int(obj.header.seq) < 3:
                 continue
@@ -251,34 +250,35 @@ class ROSManager:
         Emergency 상태일 때 5초 동안 signal 값을 7로 변경하여 계속 publish
         5초 후에는 50초 동안 발행하지 않음 (플래너가 동작하기 때문)
         """
-        if emergency == 'emergency':
-            # 쿨다운 중이면 발행하지 않음
-            if self.emergency_cooldown:
-                return
+        if self.user_input['scenario'] >=4 : 
+            if emergency == 'emergency':
+                # 쿨다운 중이면 발행하지 않음
+                if self.emergency_cooldown:
+                    return
+                    
+                # Emergency 발행 시작 (처음 한 번만)
+                if not self.emergency_active:
+                    self.emergency_active = True
+                    rospy.loginfo("Emergency publishing started for 5 seconds")
+                    
+                    # 기존 타이머가 있으면 취소
+                    if self.emergency_timer is not None:
+                        self.emergency_timer.cancel()
+                    
+                    # 5초 후 발행 중단하고 쿨다운 시작
+                    self.emergency_timer = Timer(self.emergency_duration, self.stop_emergency_publishing)
+                    self.emergency_timer.start()
                 
-            # Emergency 발행 시작 (처음 한 번만)
-            if not self.emergency_active:
-                self.emergency_active = True
-                rospy.loginfo("Emergency publishing started for 5 seconds")
-                
-                # 기존 타이머가 있으면 취소
-                if self.emergency_timer is not None:
-                    self.emergency_timer.cancel()
-                
-                # 5초 후 발행 중단하고 쿨다운 시작
-                self.emergency_timer = Timer(self.emergency_duration, self.stop_emergency_publishing)
-                self.emergency_timer.start()
-            
-            # Emergency 활성 상태에서만 발행
-            if self.emergency_active:
-                # Emergency user_input 메시지 생성 (signal만 7로 변경)
-                emergency_user_input = Float32MultiArray()
-                emergency_user_input.data = [
-                    float(self.user_input['state']),        # 기존 state 유지
-                    7.0,                                     # signal을 7로 변경
-                    self.user_input['target_velocity'],      # 기존 target_velocity 유지
-                    float(self.user_input['scenario'])       # 기존 scenario 유지
-                ]
-                self.user_input['signal'] = 7
-                # Emergency user_input publish
-                self.pub_emergency_user_input.publish(emergency_user_input)
+                # Emergency 활성 상태에서만 발행
+                if self.emergency_active:
+                    # Emergency user_input 메시지 생성 (signal만 7로 변경)
+                    emergency_user_input = Float32MultiArray()
+                    emergency_user_input.data = [
+                        float(self.user_input['state']),        # 기존 state 유지
+                        7.0,                                     # signal을 7로 변경
+                        self.user_input['target_velocity'],      # 기존 target_velocity 유지
+                        float(self.user_input['scenario'])       # 기존 scenario 유지
+                    ]
+                    self.user_input['signal'] = 7
+                    # Emergency user_input publish
+                    self.pub_emergency_user_input.publish(emergency_user_input)
