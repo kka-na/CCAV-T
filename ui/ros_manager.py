@@ -138,7 +138,7 @@ class RosManager:
         # 최적화된 이미지 subscriber 설정
         # queue_size=1: 지연 최소화
         # buff_size 최대: 네트워크 성능 향상
-        rospy.Subscriber('/gmsl_camera/dev/video2/compressed', CompressedImage, 
+        rospy.Subscriber('/gmsl_camera/dev/video4/compressed', CompressedImage, 
                         self.compressed_image_cb, queue_size=1, buff_size=2**28, 
                         tcp_nodelay=True) #IONiQ5
         rospy.Subscriber('/camera/image_color/compressed', CompressedImage, 

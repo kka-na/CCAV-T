@@ -135,8 +135,14 @@ class LocalPathPlanner:
         c_pt = wps[-1]
         l_id, r_id = self.phelper.get_neighbor(uni[0])
         n_id = r_id if r_id is not None else l_id
-        if self.type == 'ego':
+        
+        if self.type == 'target':
             if self.scenario == 5:
+                n_id = l_id
+            elif self.scenario == 6:
+                n_id = l_id
+        elif self.type == 'ego':
+            if self.scenario == 6:
                 n_id = l_id
         
         #TODO: 0819

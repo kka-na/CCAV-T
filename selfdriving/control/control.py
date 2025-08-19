@@ -49,7 +49,7 @@ class Control():
         diff = self.max_velocity - self.current_velocity
         if path_len > 50:
             if diff > self.max_velocity / 2 :
-                velocity = self.current_velocity + 0.1
+                velocity = self.current_velocity + 0.5
             else:
                 velocity = self.current_velocity + 0.5
         else:
