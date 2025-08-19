@@ -138,6 +138,11 @@ class LocalPathPlanner:
         if self.type == 'ego':
             if self.scenario == 5:
                 n_id = l_id
+        
+        #TODO: 0819
+        # elif self.type == 'target':
+        #     if self.scenario == 6:
+        #         n_id = l_id
 
         if n_id is not None:
             r = self.MAP.lanelets[n_id]['waypoints']
@@ -278,7 +283,6 @@ class LocalPathPlanner:
         bsd = False
         if self.current_signal in [1,2]:
             ts, td = self.phelper.object_to_frenet(self.local_path, self.target_pose)
-            print(ts, td)
             if ts > self.bsd_range[0] and ts < self.bsd_range[1] and abs(td) < self.bsd_range[1]:
                 d = abs(ts)-8
                 v_rel = abs(self.target_velocity - self.current_velocity)
