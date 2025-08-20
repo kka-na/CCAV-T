@@ -36,12 +36,15 @@ class MyApp(QMainWindow):
         self.image_update_count = 0
         self.fps_display_timer = 0
 
+        self.reject_once = False
+
         self.set_values()
         self.set_widgets()
         self.set_timers()
 
     def set_values(self):
         self.sig_in = False
+        self.state = 0
         self.sig_in_viz = False
         self.state_list = {'temp': 0, 'prev': 0, 'target':0}
         self.state_string = ['Normal', 'Left Change', 'Right Change', 'Straight', 'Safe', 'Dangerous', 'Init', 'Emergency']
@@ -54,11 +57,11 @@ class MyApp(QMainWindow):
 
     def set_widgets(self):
         self.rviz_widget = RvizWidget(self, self.type)
-        self.rtt_graph = SpeedSubscriberWidget('#1a73eb', self)
-        self.speed_graph = SpeedSubscriberWidget('#e23a2e', self)
-        self.delay_graph = SpeedSubscriberWidget('#fc8c03', self)
-        self.packet_size_graph = SpeedSubscriberWidget('#fbbf12',self)
-        self.packet_rate_graph = SpeedSubscriberWidget('#279847',self)
+        self.rtt_graph = SpeedSubscriberWidget('#1a73eb', 0, 2000, 'ms', self)
+        self.speed_graph = SpeedSubscriberWidget('#e23a2e', 0, 0.05, 'mbps', self)
+        self.delay_graph = SpeedSubscriberWidget('#fc8c03', 0, 1500, 'ms', self)
+        self.packet_size_graph = SpeedSubscriberWidget('#fbbf12',0, 500, 'byte', self)
+        self.packet_rate_graph = SpeedSubscriberWidget('#279847', 0, 100, '%', self)
         self.initUI()
     
     def set_timers(self):
@@ -108,20 +111,24 @@ class MyApp(QMainWindow):
         self.ui.tableWidget.setItem(3, 1, QTableWidgetItem(communication_performance['delay']))
         self.ui.tableWidget.setItem(4, 1, QTableWidgetItem(communication_performance['packet_size']))
         self.ui.tableWidget.setItem(5, 1, QTableWidgetItem(communication_performance['packet_rate']))
-        self.rtt_graph.set_speed(communication_performance['rtt'])
-        self.speed_graph.set_speed(communication_performance['speed'])
-        self.delay_graph.set_speed(communication_performance['delay'])
-        self.packet_size_graph.set_speed(communication_performance['packet_size'])
-        self.packet_rate_graph.set_speed(communication_performance['packet_rate'])
+        self.rtt_graph.set_speed(float(communication_performance['rtt']))
+        self.speed_graph.set_speed(float(communication_performance['speed']))
+        self.delay_graph.set_speed(float(communication_performance['delay']))
+        self.packet_size_graph.set_speed(float(communication_performance['packet_size']))
+        self.packet_rate_graph.set_speed(float(communication_performance['packet_rate']))
 
     def state_update(self, signals):
         ego_signal = int(signals['ego'])
         target_signal = int(signals['target'])
+        if target_signal == 5:
+            self.reject_once = True
         if ego_signal != self.ego_signal:
             self.ego_signal = ego_signal
             self.check_viz_timer()
         if target_signal != self.target_signal:
             self.target_signal = target_signal
+            if self.reject_once and target_signal == 0:
+                self.click_signal(self.state)
             self.check_viz_timer()
 
         self.ui.egoLabel.setText(self.state_string[self.ego_signal])

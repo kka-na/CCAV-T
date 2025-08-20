@@ -227,7 +227,7 @@ class GaugeWidget(QWidget):
         self.update_gauge()
 
 class LiveSpeedGraph(FigureCanvas):
-    def __init__(self, color='#005eff', parent=None):
+    def __init__(self, color='#005eff', y_min=0, y_max=10000, y_label='', parent=None):
         fig = Figure(facecolor='#EEEEEC')
         fig.subplots_adjust(bottom=0.2)
         self.axes = fig.add_subplot(111)  # 1x1 그리드의 첫 번째 subplot
@@ -236,12 +236,16 @@ class LiveSpeedGraph(FigureCanvas):
         self.current_speeds = []
         self.times = []
 
-        self.axes.set_xlim(0, 10)  # 5초 동안의 데이터를 보여줍니다.
-        self.axes.set_ylim(0, 10000)  # 속도의 범위를 0에서 120까지로 가정합니다.
+        # y축 범위를 인자로 받아서 설정
+        self.y_min = y_min
+        self.y_max = y_max
+        self.y_label = y_label
+        
+        self.axes.set_xlim(0, 10)  # 10초 동안의 데이터를 보여줍니다.
+        self.axes.set_ylim(self.y_min, self.y_max)  # y축 범위를 인자로 받은 값으로 설정
         self.color = color
         self.axes.tick_params(labelsize=8)
         self.axes.legend(prop={'size': 8})
-
 
     def update_graph(self, current_speed):
         now = datetime.datetime.now()
@@ -257,7 +261,7 @@ class LiveSpeedGraph(FigureCanvas):
 
         self.current_speeds.append(current_speed)
 
-        # 5초 이상의 오래된 데이터를 제거합니다.
+        # 10초 이상의 오래된 데이터를 제거합니다.
         while self.times and self.times[0] < self.times[-1] - 10:
             self.times.pop(0)
             self.current_speeds.pop(0)
@@ -266,35 +270,55 @@ class LiveSpeedGraph(FigureCanvas):
         self.axes.clear()
         self.axes.plot(self.times, self.current_speeds, color=self.color, linewidth=3)
         self.axes.set_xlim(self.times[0], max(10, self.times[-1]))  # x축 범위를 동적으로 조정
+        self.axes.set_ylim(self.y_min, self.y_max)  # y축 범위를 고정값으로 유지
+
+        # y축 눈금과 레이블 설정
+        import numpy as np
+        y_ticks = np.linspace(self.y_min, self.y_max, 5)  # 11개의 균등한 눈금 생성
+        self.axes.set_yticks(y_ticks)
+        self.axes.set_ylabel(f'{self.y_label}', fontsize=6)
+        self.axes.set_yticklabels([f'{int(tick)}' if tick == int(tick) else f'{tick:.2f}' for tick in y_ticks])
+
+
+        # 그리드 표시 (선택사항)
+        self.axes.grid(True, alpha=0.3)
+
         self.axes.tick_params(labelsize=8)
+            # 여백 조정 - 좌우 여백을 최소화
+        self.figure.subplots_adjust(
+            left=0.13,    # 왼쪽 여백 (기본값 0.1)
+            right=0.98,   # 오른쪽 여백 (기본값 0.9)
+            bottom=0.2,   # 아래쪽 여백
+            top=0.95      # 위쪽 여백
+        )
         self.draw()
 
 
 class SpeedSubscriberWidget(QWidget):
-    def __init__(self,  color='#005eff', parent=None):
+    def __init__(self, color='#005eff', y_min=0, y_max=10000, y_label='', parent=None):
         super().__init__(parent)
         self.current_speed = 0
-        self.initUI(color)
+        self.initUI(color, y_min, y_max, y_label)
 
     def set_speed(self, e):
         self.current_speed = e
         self.update_graph()
 
-    def initUI(self, color):
+    def initUI(self, color, y_min, y_max,  y_label):
         self.setContentsMargins(-1, -1, -1, -1)
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        self.graph = LiveSpeedGraph(color, self)
+        # y축 범위를 LiveSpeedGraph에 전달
+        self.graph = LiveSpeedGraph(color, y_min, y_max, y_label, self)
         layout.addWidget(self.graph)
         self.setLayout(layout)
         self.setWindowTitle('ROS Speed Graph')
-        self.setGeometry(0,0, 800, 500)
+        self.setGeometry(0, 0, 800, 500)
         self.setAutoFillBackground(True)
-    
-
 
     def update_graph(self):
         self.graph.update_graph(self.current_speed)
+
 
 
 class GearWidget(QWidget):

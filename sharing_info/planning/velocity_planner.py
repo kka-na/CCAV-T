@@ -16,7 +16,7 @@ class VelocityPlanner:
         self.temp_vel = self.max_vel
         self.temp_sig = self.tar_sig
         self.decel_value = 0.05
-        
+        self.decel_count = 0
 
     
     def update_value(self, user_input, ego, target):
@@ -31,18 +31,30 @@ class VelocityPlanner:
         if self.temp_sig == 0 and self.temp_vel != self.max_vel:
             self.temp_vel = self.max_vel
         else:
-            if self.tar_sig == 5 or self.temp_sig == 5:
-                self.temp_vel = self.temp_vel - (self.max_vel*self.decel_value)
-                self.temp_sig = self.tar_sig
+            if self.type == 'ego':
+                # if deny the lane change
+                if self.tar_sig == 5 or self.temp_sig == 5:
+                    # 10번까지만 감속
+                    if self.decel_count < 10:
+                        self.temp_vel = self.temp_vel - 0.3
+                        self.decel_count += 1  # 카운터 증가
+                    self.temp_sig = self.tar_sig
 
-            elif self.tar_sig == 0 or self.tar_sig == 4:
-                self.temp_vel = min(self.max_vel, self.temp_vel + (self.max_vel-self.temp_vel)*self.decel_value)
-                self.temp_sig = self.tar_sig
-            # else:
-            #     bsd = lpp_result[6]
-            #     if bsd:
-            #         self.temp_vel = self.temp_vel - (self.max_vel*self.decel_value)
-            #     else:
-            #         self.temp_vel = min(self.max_vel, self.temp_vel + (self.max_vel-self.temp_vel)*self.decel_value)
+                elif self.tar_sig == 0 or self.tar_sig == 4:
+                    self.temp_vel = self.max_vel
+                    self.temp_sig = self.tar_sig
+                    self.decel_count = 0
 
+            elif self.type == 'target':
+                target_pos = lpp_result[7]
+                safety = lpp_result[5]
+                if safety == 1: 
+                    if target_pos[0] == 'REAR':
+                        self.temp_vel = self.temp_vel + 1
+                    else:
+                        self.temp_vel = self.temp_vel - 0.8
+                elif safety == 2:
+                    self.temp_vep = self.temp_vel + 1
+                    
         return self.temp_vel
+

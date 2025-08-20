@@ -51,13 +51,12 @@ class Control():
             if diff > self.max_velocity / 2 :
                 velocity = self.current_velocity + 0.5
             else:
-                velocity = self.current_velocity + 0.5
+                velocity = self.current_velocity + 0.8
         else:
             velocity = self.current_velocity - 0.5
         
         self.target_velocity = velocity if velocity < self.max_velocity else self.max_velocity
         
-
     def execute(self):
         acc = self.APID.execute(self.state, self.target_velocity, self.current_velocity)
         steer, lh = self.PP.execute(self.current_location, self.state, self.local_path, self.current_heading, self.current_velocity)        

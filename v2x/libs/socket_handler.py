@@ -7,6 +7,7 @@ import struct
 import math
 import time
 import logging
+from collections import deque
 
 from .v2x_interface import *
 from .crc16 import calc_crc16
@@ -31,6 +32,15 @@ class SocketHandler:
         }
         self.rtt_ts_list = []
         self.tx_message = ""
+
+        # 윈도우 기반 throughput 계산을 위한 변수들
+        self.window_size = 10.0  # 10초 윈도우
+        self.tx_history = deque()  # (timestamp, bytes_sent) 튜플들 저장
+        self.total_bytes_sent = 0
+        self.first_tx_time = None
+        self.last_mbps_calc_time = 0
+        self.mbps_calc_interval = 1.0  # 1초마다 mbps 계산
+        
         self.set_logger(type)
 
     def set_logger(self, type):
@@ -232,6 +242,8 @@ class SocketHandler:
         delay = int(time.time()*1000)-rx_timestamp
         self.communication_performance['delay'] = delay
 
+    
+
     def send(self, data, send_size):
         try:
             self.fd.sendall(data)
@@ -239,11 +251,7 @@ class SocketHandler:
             self.logger.info(self.tx_message)
             self.rtt_ts_list.append([self.tx_cnt, time.time()])
             self.tx_cnt += 1
-            current_time = time.time()
-            tx_time = current_time - self.tx_start_time
-            mbps = (send_size*8/tx_time)/1000000
-            self.communication_performance['mbps'] = mbps 
-            self.tx_start_time = current_time
+            self.update_throughput_metrics(send_size)
             return 1
         except socket.error as e:
             self.logger.error(f"{e}")
@@ -403,3 +411,45 @@ class SocketHandler:
     def get_performance_log(self):
         performance_str = "Communication Performance \n" + " ".join([f"{key}: {value}" for key, value in self.communication_performance.items()])
         return performance_str+"\n\n"
+    
+    def calculate_window_mbps(self, current_time):
+        """윈도우 기반 mbps 계산"""
+        # 윈도우 크기를 벗어난 오래된 데이터 제거
+        window_start_time = current_time - self.window_size
+        while self.tx_history and self.tx_history[0][0] < window_start_time:
+            self.tx_history.popleft()
+        
+        # 윈도우 내 총 바이트 계산
+        if len(self.tx_history) < 2:
+            return 0.0
+        
+        window_bytes = sum(entry[1] for entry in self.tx_history)
+        actual_window_time = current_time - self.tx_history[0][0]
+        
+        if actual_window_time <= 0:
+            return 0.0
+        
+        # Mbps 계산: (bytes * 8 bits/byte) / (time_seconds * 1,000,000)
+        mbps = (window_bytes * 8) / (actual_window_time * 1_000_000)
+        return round(mbps, 3)
+
+    def update_throughput_metrics(self, send_size):
+        """throughput 메트릭 업데이트"""
+        current_time = time.time()
+        
+        # 첫 전송 시간 기록
+        if self.first_tx_time is None:
+            self.first_tx_time = current_time
+        
+        # 전송 기록 추가
+        self.tx_history.append((current_time, send_size))
+        self.total_bytes_sent += send_size
+        
+        # 일정 간격으로만 mbps 계산 (성능 최적화)
+        if current_time - self.last_mbps_calc_time >= self.mbps_calc_interval:
+            # 윈도우 기반 mbps 계산
+            window_mbps = self.calculate_window_mbps(current_time)
+            self.communication_performance['mbps'] = window_mbps
+
+            
+            self.last_mbps_calc_time = current_time

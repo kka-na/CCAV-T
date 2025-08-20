@@ -16,7 +16,7 @@ class IONIQ5():
         self.setup_encode_handler()
 
         self.current_velocity = 0.0
-        self.alive_cnt = -1
+        self.alive_cnt = 0
         self.state = 0
 
     def set_actuator(self, msg):

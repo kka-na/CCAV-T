@@ -23,7 +23,7 @@ Visualization Manager:
       Marker Topic: /target/visualizer/ego_car
       Name: Ego Marker
       Namespaces:
-        {}
+        ego_car_marker: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -31,7 +31,7 @@ Visualization Manager:
       Marker Topic: /target/visualizer/ego_car_info
       Name: Ego Info
       Namespaces:
-        {}
+        ego_car_info: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -39,7 +39,7 @@ Visualization Manager:
       Marker Topic: /target/visualizer/local_ego_path
       Name: Ego Path
       Namespaces:
-        {}
+        path: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -47,7 +47,7 @@ Visualization Manager:
       Marker Topic: /target/visualizer/local_target_path
       Name: Target Path
       Namespaces:
-        {}
+        path: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -55,7 +55,7 @@ Visualization Manager:
       Marker Topic: /target/visualizer/target_car
       Name: Target Marker
       Namespaces:
-        {}
+        target_car_marker: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -63,7 +63,7 @@ Visualization Manager:
       Marker Topic: /target/visualizer/target_car_info
       Name: Target Info
       Namespaces:
-        {}
+        target_car_info: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -2601,7 +2601,7 @@ Visualization Manager:
       Marker Topic: /target/look_a_head
       Name: Look a Head
       Namespaces:
-        {}
+        lookahead: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -2664,9 +2664,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.41539862751960754
+      Pitch: 0.1753987967967987
       Target Frame: target_ego_car
-      Yaw: 3.595386266708374
+      Yaw: 3.090385913848877
     Saved: ~
 Window Geometry:
   Displays:

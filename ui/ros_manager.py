@@ -161,11 +161,11 @@ class RosManager:
                 self.start_time = datetime.now()
             self.communication_performance['comulative_time'] = str(datetime.now() - self.start_time)
             self.communication_performance['distance'] = str(round(random.randint(5,30),5))
-            self.communication_performance['rtt'] = str(round(random.randint(900,1800),5))
-            self.communication_performance['speed'] = str(round(0.001,5))
-            self.communication_performance['delay'] = str(round(random.randint(300,700),2))
+            self.communication_performance['rtt'] = str(round(random.randint(0,1500),5))
+            self.communication_performance['speed'] = str(round((random.randint(0,49))/100,2))
+            self.communication_performance['delay'] = str(round(random.randint(0,1000),2))
             self.communication_performance['packet_size'] = str(int(347))
-            self.communication_performance['packet_rate'] = str(int(random.randint(70,100))) if random.randint(70,100) < 100 else str(100)
+            self.communication_performance['packet_rate'] = str(int(random.randint(0,100))) if random.randint(0,100) < 100 else str(100)
     
     def target_share_info_cb(self, msg:ShareInfo):
         self.signals['target']  = msg.signal.data

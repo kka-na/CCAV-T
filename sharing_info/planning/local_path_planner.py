@@ -47,7 +47,7 @@ class LocalPathPlanner:
         self.target_path = []
         self.confirm_safety = False
         self.check_safety = []
-        self.intersection_radius = 1.5
+        self.intersection_radius = 2.5
         self.inter_pt = None
         self.target_pose = [0,0]
 
@@ -109,7 +109,7 @@ class LocalPathPlanner:
                 self.change_state = False
                 return 'STRAIGHT'
             else: # if merging rejected
-                if (self.temp_signal != self.target_signal and self.target_signal == 5) or self.bsd: #Target merging rejected
+                if (self.temp_signal != self.target_signal and self.target_signal == 5): #Target merging rejected
                     self.temp_signal = 3
                     self.change_state = False
                     return 'STRAIGHT'
@@ -237,7 +237,7 @@ class LocalPathPlanner:
                 self.check_safety = []
                 self.inter_pt = None
 
-        if find and not self.confirm_safety and self.target_signal in [1,2]:
+        if find and self.target_signal in [1,2]: #and not self.confirm_safety 
             self.inter_pt = inter_pt
             now_idx = phelper.find_nearest_idx(self.local_path, self.local_pose)
             l_o1 = (inter_idx-now_idx)
@@ -250,12 +250,6 @@ class LocalPathPlanner:
             else:
                 safety = 1 if abs(l_o3) > d_TC else 2 # 1 : Safe, 2 : Dangerous
             
-            #print(abs(l_o3), d_TC, safety)
-
-            #TODO
-            # safety = 1 #safe mode (scenario 1, scenario 3)
-            # safety = 2 #dangerous mode (scenario 2)
-
              # Safety 확인 로직
             if self.safety != safety:
                 if len(self.check_safety) < 1:
@@ -264,7 +258,7 @@ class LocalPathPlanner:
                     
             else:
                 self.check_safety.append(safety)
-                if len(self.check_safety) > 10:
+                if len(self.check_safety) > 5:
                     self.confirm_safety = True
         
         # elif self.safety == 2:
@@ -329,5 +323,20 @@ class LocalPathPlanner:
         if self.type == 'target':
             self.merge_safety_calc()
         # bsd = self.calc_bsd() -> without cooperation
+        target_pos = self.set_your_position()
 
-        return self.local_path, limit_local_path, local_waypoints, self.local_lane_number, caution, self.safety, bsd
+        return self.local_path, limit_local_path, local_waypoints, self.local_lane_number, caution, self.safety, bsd, target_pos 
+
+    def set_your_position(self):
+        s, d = phelper.object_to_frenet(self.local_path, self.target_pose)
+        if s < 0 :
+            ss = 'REAR'
+        else:
+            ss = 'FRONT'
+        
+        if d < 0:
+            dd = 'LEFT'
+        else:
+            dd = 'RIGHT'
+        
+        return ss, dd
