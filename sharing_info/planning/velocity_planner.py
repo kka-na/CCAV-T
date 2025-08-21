@@ -46,15 +46,18 @@ class VelocityPlanner:
                     self.decel_count = 0
 
             elif self.type == 'target':
-                target_pos = lpp_result[7]
-                safety = lpp_result[5]
-                if safety == 1: 
-                    if target_pos[0] == 'REAR':
-                        self.temp_vel = self.temp_vel + 1
-                    else:
-                        self.temp_vel = self.temp_vel - 0.8
-                elif safety == 2:
-                    self.temp_vep = self.temp_vel + 1
-                    
+                if len(lpp_result) < 8:
+                    pass
+                else:
+                    target_pos = lpp_result[7]
+                    safety = lpp_result[5]
+                    if safety == 1: 
+                        if target_pos[0] == 'REAR':
+                            self.temp_vel = self.temp_vel + 1
+                        else:
+                            self.temp_vel = self.temp_vel - 0.8
+                    elif safety == 2:
+                        self.temp_vep = self.temp_vel + 1
+                        
         return self.temp_vel
 
