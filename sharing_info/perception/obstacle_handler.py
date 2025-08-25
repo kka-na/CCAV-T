@@ -16,7 +16,7 @@ class ObstacleHandler:
         self.current_heading = 0.0
 
         self.stopped_vehicle_start_time = None
-        self.emergency_threshold = 1.5  # 3초
+        self.emergency_threshold = 0.3  # 3초
 
     def update_value(self, car, local_path, lidar_obstacles):
         self.local_pose = [car['x'], car['y']]
@@ -142,7 +142,7 @@ class ObstacleHandler:
         
         #print(f"[DEBUG] 현재 상태 - velocity: {velocity:.2f}, distance: {distance:.2f}")
         
-        if abs(velocity) < stopped_threshold and distance < 80:
+        if abs(velocity) < stopped_threshold or distance < 55:
             # 차량이 멈춘 상태
             current_time = time.time()  # 또는 rospy.Time.now().to_sec()
             
