@@ -157,7 +157,7 @@ class MyApp(QMainWindow):
         with open(f"./yaml/{self.type}_point.yaml", "r") as f:
             config = yaml.safe_load(f)
         
-        point_config = config[str(point_num)]
+        point_config = config.get(str(point_num), config.get("default", {})) 
         point = point_config['point']
 
         self.RM.publish_plot_point(point)

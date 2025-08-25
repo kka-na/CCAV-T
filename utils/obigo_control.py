@@ -154,6 +154,8 @@ class ObigoTest:
 
     
     def emergency_image_cb(self, msg):
+        print("emergency image pubed")
+        
         np_arr = np.frombuffer(msg.data, np.uint8)
         cv_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
         _, buffer = cv2.imencode('.jpg', cv_image)

@@ -16,7 +16,7 @@ class ObstacleHandler:
         self.current_heading = 0.0
 
         self.stopped_vehicle_start_time = None
-        self.emergency_threshold = 2.0  # 3초
+        self.emergency_threshold = 1.5  # 3초
 
     def update_value(self, car, local_path, lidar_obstacles):
         self.local_pose = [car['x'], car['y']]
@@ -132,26 +132,37 @@ class ObstacleHandler:
     
     def check_emergency(self, obs):
         # obs[4]가 velocity라고 가정
-        if len(obs) < 1 :
+        if len(obs) < 6:  # obs[5]까지 필요하므로 6개 이상 확인
+            #print(f"[DEBUG] obs 길이 부족: {len(obs)} < 6")
             return 'normal'
+
         velocity = obs[4]
         distance = obs[5]
         stopped_threshold = 1  # 정지 상태로 간주할 속도 임계값
-        if abs(velocity) < stopped_threshold or distance < 30:
+        
+        #print(f"[DEBUG] 현재 상태 - velocity: {velocity:.2f}, distance: {distance:.2f}")
+        
+        if abs(velocity) < stopped_threshold and distance < 80:
             # 차량이 멈춘 상태
             current_time = time.time()  # 또는 rospy.Time.now().to_sec()
             
             if self.stopped_vehicle_start_time is None:
                 # 처음 멈춘 것을 감지
                 self.stopped_vehicle_start_time = current_time
+                #print(f"[DEBUG] 정지 상태 감지 시작 - 시간: {current_time:.2f}")
             else:
                 # 멈춘 시간 계산
                 stopped_duration = current_time - self.stopped_vehicle_start_time
+                #print(f"[DEBUG] 정지 지속 시간: {stopped_duration:.2f}초 / 임계값: {self.emergency_threshold}초")
                 
                 if stopped_duration >= self.emergency_threshold:
-                    return "emergency"  # 또는 적절한 emergency 상태값
+                    #print(f"[DEBUG] 🚨 응급상황 감지! 정지 시간 {stopped_duration:.2f}초 초과")
+                    return "emergency"
         else:
             # 차량이 움직이고 있으면 타이머 리셋
+            if self.stopped_vehicle_start_time is not None:
+                print(f"[DEBUG] 차량 이동 감지 - 타이머 리셋")
             self.stopped_vehicle_start_time = None
         
-        return "normal"  # 또는 적절한 정상 상태값
+        #print(f"[DEBUG] 정상 상태 반환")
+        return "normal"

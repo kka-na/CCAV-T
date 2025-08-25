@@ -88,7 +88,8 @@
                   </font>
                  </property>
                  <property name="text">
-                  <string>▶️</string>
+                  <string>▶️
+(q)</string>
                  </property>
                  <property name="shortcut">
                   <string>Q</string>
@@ -115,7 +116,8 @@
                   <string notr="true">background-color: rgb(239, 41, 41);</string>
                  </property>
                  <property name="text">
-                  <string>■</string>
+                  <string>■
+(e)</string>
                  </property>
                  <property name="shortcut">
                   <string>E</string>
@@ -174,7 +176,8 @@
                   </font>
                  </property>
                  <property name="text">
-                  <string>⬅️</string>
+                  <string>⬅️
+(a)</string>
                  </property>
                  <property name="shortcut">
                   <string>A</string>
@@ -198,10 +201,11 @@
                   </font>
                  </property>
                  <property name="text">
-                  <string>⬆️</string>
+                  <string>⬆️
+(s)</string>
                  </property>
                  <property name="shortcut">
-                  <string>W</string>
+                  <string>S</string>
                  </property>
                 </widget>
                </item>
@@ -219,7 +223,11 @@
                   </font>
                  </property>
                  <property name="text">
-                  <string>🚨</string>
+                  <string>🚨
+(x)</string>
+                 </property>
+                 <property name="shortcut">
+                  <string>X</string>
                  </property>
                 </widget>
                </item>
@@ -240,7 +248,8 @@
                   </font>
                  </property>
                  <property name="text">
-                  <string>➡️</string>
+                  <string>➡️
+(d)</string>
                  </property>
                  <property name="shortcut">
                   <string>D</string>
@@ -298,24 +307,6 @@
                <layout class="QGridLayout" name="gridLayout_9">
                 <item row="0" column="0">
                  <layout class="QGridLayout" name="gridLayout">
-                  <item row="1" column="1">
-                   <widget class="QCheckBox" name="check5">
-                    <property name="font">
-                     <font>
-                      <family>Meera</family>
-                      <pointsize>13</pointsize>
-                      <weight>50</weight>
-                      <bold>false</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>ETrA2</string>
-                    </property>
-                    <property name="autoExclusive">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
                   <item row="1" column="2">
                    <widget class="QCheckBox" name="check6">
                     <property name="font">
@@ -327,7 +318,10 @@
                      </font>
                     </property>
                     <property name="text">
-                     <string>ETrA3</string>
+                     <string>ETrA3 (^)</string>
+                    </property>
+                    <property name="shortcut">
+                     <string>^</string>
                     </property>
                     <property name="autoExclusive">
                      <bool>true</bool>
@@ -345,7 +339,31 @@
                      </font>
                     </property>
                     <property name="text">
-                     <string>ETrA1</string>
+                     <string>ETrA1 ($)</string>
+                    </property>
+                    <property name="shortcut">
+                     <string>$</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="1">
+                   <widget class="QCheckBox" name="check5">
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>ETrA2 (%)</string>
+                    </property>
+                    <property name="shortcut">
+                     <string>%</string>
                     </property>
                     <property name="autoExclusive">
                      <bool>true</bool>
@@ -363,7 +381,10 @@
                      </font>
                     </property>
                     <property name="text">
-                     <string>CLM3</string>
+                     <string>CLM3 (#)</string>
+                    </property>
+                    <property name="shortcut">
+                     <string>#</string>
                     </property>
                     <property name="autoExclusive">
                      <bool>true</bool>
@@ -381,7 +402,10 @@
                      </font>
                     </property>
                     <property name="text">
-                     <string>CLM2</string>
+                     <string>CLM2 (@)</string>
+                    </property>
+                    <property name="shortcut">
+                     <string>@</string>
                     </property>
                     <property name="autoExclusive">
                      <bool>true</bool>
@@ -399,7 +423,10 @@
                      </font>
                     </property>
                     <property name="text">
-                     <string>CLM1</string>
+                     <string>CLM1 (!)</string>
+                    </property>
+                    <property name="shortcut">
+                     <string>!</string>
                     </property>
                     <property name="checked">
                      <bool>true</bool>
@@ -546,7 +573,11 @@
                 </font>
                </property>
                <property name="text">
-                <string>✔️</string>
+                <string>✔️
+(w)</string>
+               </property>
+               <property name="shortcut">
+                <string>W</string>
                </property>
               </widget>
              </item>

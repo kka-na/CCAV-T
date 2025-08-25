@@ -324,7 +324,6 @@ class LocalPathPlanner:
             self.merge_safety_calc()
         # bsd = self.calc_bsd() -> without cooperation
         target_pos = self.set_your_position()
-        print(target_pos)
         return self.local_path, limit_local_path, local_waypoints, self.local_lane_number, caution, self.safety, bsd, target_pos 
 
     def set_your_position(self):

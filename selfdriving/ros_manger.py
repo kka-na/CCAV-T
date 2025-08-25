@@ -16,6 +16,7 @@ class ROSManager:
         self.local_path = []
         self.target_velocity = 0
         self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 0, 'scenario':0}
+        rospy.loginfo("Selfsdriving set")
 
     def set_protocol(self):
         rospy.Subscriber(f'/{self.type}/EgoShareInfo', ShareInfo, self.ego_share_info_cb)

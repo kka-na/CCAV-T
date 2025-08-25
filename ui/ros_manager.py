@@ -89,7 +89,9 @@ class RosManager:
         # 이미지 처리를 위한 별도 스레드
         self.image_processor = ImageProcessor()
         self.image_processor.start()
-        
+        self.emergency_image_msg = None
+        self.emergency_img_cnt = 0
+
         # 현재 이미지 저장
         self.image_lock = threading.Lock()
         self.compressed_image = None
@@ -149,6 +151,7 @@ class RosManager:
         rospy.Subscriber(f'/{self.type}/test_case', String, self.test_case_cb)
         self.pub_user_input = rospy.Publisher(f'/{self.type}/user_input', Float32MultiArray, queue_size=1)
         self.pub_plot_point = rospy.Publisher(f'/{self.type}/plot_point', Marker, queue_size=1)
+        self.pub_emergency_image = rospy.Publisher(f'/{self.type}/emergency_image', CompressedImage, queue_size=1)
 
         # 이미지 프로세서의 신호 연결
         self.image_processor.image_ready.connect(self.on_image_processed)
@@ -166,6 +169,12 @@ class RosManager:
             self.communication_performance['delay'] = str(round(random.randint(0,1000),2))
             self.communication_performance['packet_size'] = str(int(347))
             self.communication_performance['packet_rate'] = str(int(random.randint(0,100))) if random.randint(0,100) < 100 else str(100)
+        if self.signals['ego'] == 7 and self.emergency_image_msg is not None:
+            if self.emergency_img_cnt < 7:
+                self.pub_emergency_image.publish(self.emergency_image_msg)
+                self.emergency_img_cnt += 1
+        elif self.signals['ego'] != 7:
+            self.emergency_img_cnt = 0
     
     def target_share_info_cb(self, msg:ShareInfo):
         self.signals['target']  = msg.signal.data
@@ -197,6 +206,7 @@ class RosManager:
             
         # 백그라운드 스레드로 이미지 데이터 전달
         self.image_processor.add_image_data(msg.data)
+        self.emergency_image_msg = msg
     
     def on_image_processed(self, pixmap):
         """이미지 처리 완료 시 호출 - UI 스레드에서 실행"""

@@ -101,7 +101,7 @@ class Simulator:
         self.obstacles = scenario_data.get("obstacles", [])
     
     async def execute(self):
-        dt = 0.075
+        dt = 0.035
         self.car['x'], self.car['y'], yaw, self.car['v'] = self.ego.next_state(dt, self.actuator)
         self.car['t'] = math.degrees(yaw)
     

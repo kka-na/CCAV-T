@@ -60,7 +60,7 @@ class SharingInfo():
                 emergency = self.perception_handling()
                 self.RM.publish(lpp_result, vp_result)
                 self.RM.publish_inter_pt(self.lpp.get_interpt())
-                #self.RM.publish_emergency(emergency)
+                self.RM.publish_emergency(emergency)
             rate.sleep()
 
 

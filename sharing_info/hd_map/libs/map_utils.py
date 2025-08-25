@@ -98,13 +98,14 @@ def MicroLaneletGraphViz(lanelet, graph):
     return array
 
 def Bound(ns, id_, n, points, type_, color):
-    if type_ == 'solid':
-        marker = Line('%s_%s' % (ns, id_), n, 0.15, color, 0)
+    
+
+    if type_ == 'dotted':
+        marker = Points('%s_%s' % (ns, id_), n, 0.15, color)
         for pt in points:
             marker.points.append(Point(x=pt[0], y=pt[1], z=0.0))
-
-    elif type_ == 'dotted':
-        marker = Points('%s_%s' % (ns, id_), n, 0.15, color)
+    else:
+        marker = Line('%s_%s' % (ns, id_), n, 0.15, color, 0)
         for pt in points:
             marker.points.append(Point(x=pt[0], y=pt[1], z=0.0))
 
