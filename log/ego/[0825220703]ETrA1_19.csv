@@ -1,0 +1,1 @@
+timestamp,state,signal,target_signal,x,y,car_heading,car_velocity,lateral_acc,longitudinal_acc,pitch_rate,roll_rate,yaw_rate,packet_rate,rtt,speed,delay,car_distance,ttc
