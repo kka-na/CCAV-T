@@ -60,7 +60,7 @@ class Visualizer:
     def ego_share_info_cb(self, msg:ShareInfo):
         yaw = msg.pose.theta
         v = msg.velocity.data
-        info = f"{(v*3.6):.2f}km/h {yaw:.2f}deg"
+        info = f"{int(v*3.6)}km/h"
         self.ego_car_info.text = info
         quaternion = tf.transformations.quaternion_from_euler(math.radians(0), math.radians(0), math.radians(yaw))  # RPY
         self.br.sendTransform(
@@ -84,7 +84,7 @@ class Visualizer:
     def target_share_info_cb(self, msg:ShareInfo):
         yaw = msg.pose.theta
         v = msg.velocity.data
-        info = f"{(v*3.6):.2f}km/h {yaw:.2f}deg"
+        info = f"{int(v*3.6)}km/h"
         self.target_car.pose.position.x = msg.pose.x
         self.target_car.pose.position.y = msg.pose.y
         self.target_car_info.pose.position.x = msg.pose.x

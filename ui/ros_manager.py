@@ -27,7 +27,7 @@ class ImageProcessor(QThread):
         # 1920x720 비율을 유지하면서 UI 라벨에 맞는 크기 계산
         # 라벨 높이가 300이므로, 비율 유지: 800x300
         self.target_width = 600 # 1920/720 * 300 ≈ 800
-        self.target_height = 300
+        self.target_height = 250
         
     def add_image_data(self, msg_data):
         """새 이미지 데이터 추가 (큐가 가득 차면 오래된 것 제거)"""
@@ -85,6 +85,10 @@ class RosManager:
         self.test = test
         rospy.init_node(f"{type}_ui")
         self.start_time = None
+
+        self.last_communication_time = None
+        self.communication_timeout = 5.0  # 10초
+        self.cumulative_time = 0  # 누적 시간 (초)
         
         # 이미지 처리를 위한 별도 스레드
         self.image_processor = ImageProcessor()
@@ -115,7 +119,9 @@ class RosManager:
         }
 
         self.ego_pos = [0,0]
-        self.test_case = 'Test Case : '
+        self.ego_velocity = 0
+        self.target_velocity = 0
+        self.test_case = '시나리오 : '
         self.communication_performance = {
             'comulative_time':0,
             'distance':0,
@@ -125,6 +131,7 @@ class RosManager:
             'packet_size':0,
             'packet_rate':0
         }
+        self.communication_on = False
 
     def set_protocol(self):
         rospy.Subscriber(f'/{self.type}/EgoShareInfo', ShareInfo, self.ego_share_info_cb)
@@ -159,16 +166,16 @@ class RosManager:
     def ego_share_info_cb(self, msg:ShareInfo):
         self.signals['ego'] = msg.signal.data
         self.ego_pos = [msg.pose.x, msg.pose.y]
-        if self.test == 1:
-            if self.start_time is None:
-                self.start_time = datetime.now()
-            self.communication_performance['comulative_time'] = str(datetime.now() - self.start_time)
-            self.communication_performance['distance'] = str(round(random.randint(5,30),5))
-            self.communication_performance['rtt'] = str(round(random.randint(0,1500),5))
-            self.communication_performance['speed'] = str(round((random.randint(0,49))/100,2))
-            self.communication_performance['delay'] = str(round(random.randint(0,1000),2))
-            self.communication_performance['packet_size'] = str(int(347))
-            self.communication_performance['packet_rate'] = str(int(random.randint(0,100))) if random.randint(0,100) < 100 else str(100)
+        self.ego_velocity = int(msg.velocity.data * 3.6)
+
+        # 통신 타임아웃 체크
+        if self.communication_on and self.last_communication_time is not None:
+            elapsed = (datetime.now() - self.last_communication_time).total_seconds()
+            if elapsed > self.communication_timeout:
+                self.start_time = None
+                self.communication_on = False
+                self.last_communication_time = None
+                
         if self.signals['ego'] == 7 and self.emergency_image_msg is not None:
             if self.emergency_img_cnt < 7:
                 self.pub_emergency_image.publish(self.emergency_image_msg)
@@ -178,21 +185,39 @@ class RosManager:
     
     def target_share_info_cb(self, msg:ShareInfo):
         self.signals['target']  = msg.signal.data
+        self.target_velocity = int(msg.velocity.data*3.6)
     
     def test_case_cb(self, msg:String):
-        self.test_case = f"Test Case : {msg.data}"
+        self.test_case = f"시나리오 : {msg.data}"
 
     def communication_performance_cb(self, msg):
         state, v2x, rtt, mbps, packet_size, packet_rate, distance, delay = msg.data
         if rtt == 0:
             return
+        
+        current_time = datetime.now()
+        
         if self.start_time is None:
-            self.start_time = datetime.now()
-        self.communication_performance['comulative_time'] = str(datetime.now() - self.start_time)
-        self.communication_performance['distance'] = str(round(distance,5))
-        self.communication_performance['rtt'] = str(round(rtt,5))
+            self.start_time = current_time
+            self.communication_on = True
+        else:
+            # 이전 통신 시간이 있으면 누적 시간에 더하기
+            if self.last_communication_time is not None:
+                elapsed = (current_time - self.last_communication_time).total_seconds()
+                self.cumulative_time += elapsed
+        
+        # 마지막 통신 시간 업데이트
+        self.last_communication_time = datetime.now()
+
+        hours = int(self.cumulative_time // 3600)
+        minutes = int((self.cumulative_time % 3600) // 60)
+        seconds = int(self.cumulative_time % 60)
+        self.communication_performance['comulative_time'] = f"{hours}:{minutes:02d}:{seconds:02d}"
+        
+        self.communication_performance['distance'] = str(round(distance))
+        self.communication_performance['rtt'] = str(round(rtt))
         self.communication_performance['speed'] = str(round(mbps,5))
-        self.communication_performance['delay'] = str(round(delay,2))
+        self.communication_performance['delay'] = str(round(delay))
         self.communication_performance['packet_size'] = str(int(packet_size))
         self.communication_performance['packet_rate'] = str(int(packet_rate)) if packet_rate < 100 else str(100)
     

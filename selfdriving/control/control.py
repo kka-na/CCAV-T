@@ -44,18 +44,16 @@ class Control():
             for point in path:
                 self.local_path.append(Point(x=point[0], y=point[1]))
         self.calculate_target_velocity(len(path))
-            
+
     def calculate_target_velocity(self, path_len):
         diff = self.max_velocity - self.current_velocity
-        if path_len > 50:
-            if diff > self.max_velocity / 2 :
-                velocity = self.current_velocity + 0.5
-            else:
-                velocity = self.current_velocity + 0.5
+        if diff > self.max_velocity / 2 :
+            velocity = self.current_velocity + 0.5
         else:
-            velocity = self.current_velocity - 0.5
+            velocity = self.current_velocity + 0.3
         
         self.target_velocity = velocity if velocity < self.max_velocity else self.max_velocity
+
         
     def execute(self):
         acc = self.APID.execute(self.state, self.target_velocity, self.current_velocity)

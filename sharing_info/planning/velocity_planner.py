@@ -17,6 +17,7 @@ class VelocityPlanner:
         self.temp_sig = self.tar_sig
         self.decel_value = 0.05
         self.decel_count = 0
+        self.accel_count = 0
 
     
     def update_value(self, user_input, ego, target):
@@ -28,36 +29,55 @@ class VelocityPlanner:
         
     
     def execute(self, lpp_result):
-        if self.temp_sig == 0 and self.temp_vel != self.max_vel:
-            self.temp_vel = self.max_vel
-        else:
-            if self.type == 'ego':
-                # if deny the lane change
-                if self.tar_sig == 5 or self.temp_sig == 5:
-                    # 10번까지만 감속
-                    if self.decel_count < 10:
-                        self.temp_vel = self.temp_vel - 0.3
-                        self.decel_count += 1  # 카운터 증가
-                    self.temp_sig = self.tar_sig
+        vel = self.max_vel
+    
+        if self.type == 'ego':
+            # if deny the lane change
+            if self.tar_sig == 5 or self.temp_sig == 5:
+                # 10번까지만 감속
+                vel = self.max_vel - 1.5
+                self.decel_count += 1  # 감속 카운터 증가
+                self.temp_sig = self.tar_sig
 
-                elif self.tar_sig == 0 or self.tar_sig == 4:
-                    self.temp_vel = self.max_vel
-                    self.temp_sig = self.tar_sig
-                    self.decel_count = 0
-
-            elif self.type == 'target':
-                if len(lpp_result) < 8:
-                    pass
+            elif self.tar_sig == 0 or self.tar_sig == 4:
+                if 10 < self.decel_count < 30:
+                    vel = self.max_vel - 1
+                    self.decel_count += 1
                 else:
-                    target_pos = lpp_result[7]
-                    safety = lpp_result[5]
-                    if safety == 1: 
-                        if target_pos[0] == 'REAR':
-                            self.temp_vel = self.temp_vel + 1
-                        else:
-                            self.temp_vel = self.temp_vel - 0.8
-                    elif safety == 2:
-                        self.temp_vep = self.temp_vel + 1
-                        
-        return self.temp_vel
+                    vel = self.max_vel
+                    self.decel_count = 0
+                self.temp_sig = self.tar_sig
+            else:
+                print("Happy happy happy")
+
+        elif self.type == 'target':
+            if len(lpp_result) < 8:
+                pass
+            else:
+                target_pos = lpp_result[7]
+                safety = lpp_result[5]
+                if safety == 1: 
+                    if target_pos[0] == 'REAR':
+                        vel = self.max_vel + 1.5
+                        self.accel_count += 1
+                    else:
+                        vel = self.max_vel - 1.5
+                        self.decel_count += 1
+                elif safety == 2:
+                    vel = self.max_vel + 1.8
+                    self.accel_count += 1
+                else:
+                    if 10 < self.decel_count < 30:
+                        self.decel_count += 1
+                        vel = self.max_vel - 1
+                    elif 10 < self.accel_count < 30:
+                        self.accel_count += 1
+                        vel = self.max_vel + 1
+                    else:
+                        vel = self.max_vel
+                        self.decel_count = 0
+                        self.accel_count = 0
+
+        self.temp_vel = vel
+        return vel
 

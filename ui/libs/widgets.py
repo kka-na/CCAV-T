@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt, QPointF
 from rviz import bindings as rviz
 import math
 import datetime
+import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
@@ -359,3 +360,121 @@ class GearWidget(QWidget):
             border-radius: 10px;
             border: 2px solid {color};
         """)
+
+class LiveDualSpeedGraph(FigureCanvas):
+    def __init__(self, color1='#005eff', color2='#e23a2e', y_min=0, y_max=10000, y_label='', label1='Speed1', label2='Speed2', parent=None):
+        fig = Figure(facecolor='#EEEEEC')
+        fig.subplots_adjust(bottom=0.2)
+        self.axes = fig.add_subplot(111)  # 1x1 그리드의 첫 번째 subplot
+        self.axes.set_facecolor('#EEEEEC')
+        super(LiveDualSpeedGraph, self).__init__(fig)
+        
+        # 두 개의 데이터 리스트
+        self.current_speeds1 = []
+        self.current_speeds2 = []
+        self.times = []
+
+        # y축 범위와 레이블 설정
+        self.y_min = y_min
+        self.y_max = y_max
+        self.y_label = y_label
+        
+        # 색상과 레이블 설정
+        self.color1 = color1
+        self.color2 = color2
+        self.label1 = label1
+        self.label2 = label2
+        
+        self.axes.set_xlim(0, 10)  # 10초 동안의 데이터를 보여줍니다.
+        self.axes.set_ylim(self.y_min, self.y_max)  # y축 범위를 인자로 받은 값으로 설정
+        self.axes.tick_params(labelsize=8)
+
+    def update_graph(self, current_speed1, current_speed2):
+        now = datetime.datetime.now()
+        # 최신 시간 데이터를 추가합니다.
+        if self.times:
+            # 현재 시간과의 차이를 계산하여 새로운 시간을 추가합니다.
+            new_time = (now - self.reference_time).total_seconds()  # reference_time은 최초 데이터 포인트의 시간입니다.
+            self.times.append(new_time)
+        else:
+            # 첫 번째 데이터 포인트인 경우, 시간 리스트를 초기화합니다.
+            self.reference_time = now
+            self.times.append(0)
+
+        self.current_speeds1.append(current_speed1)
+        self.current_speeds2.append(current_speed2)
+
+        # 10초 이상의 오래된 데이터를 제거합니다.
+        while self.times and self.times[0] < self.times[-1] - 10:
+            self.times.pop(0)
+            self.current_speeds1.pop(0)
+            self.current_speeds2.pop(0)
+
+        # 그래프를 다시 그립니다.
+        self.axes.clear()
+        
+        # 두 개의 라인 플롯
+        if self.times and self.current_speeds1 and self.current_speeds2:
+            self.axes.plot(self.times, self.current_speeds1, color=self.color1, linewidth=3, label=self.label1)
+            self.axes.plot(self.times, self.current_speeds2, color=self.color2, linewidth=3, label=self.label2)
+        
+        self.axes.set_xlim(self.times[0] if self.times else 0, max(10, self.times[-1] if self.times else 10))  # x축 범위를 동적으로 조정
+        self.axes.set_ylim(self.y_min, self.y_max)  # y축 범위를 고정값으로 유지
+
+        # y축 눈금과 레이블 설정
+        y_ticks = np.linspace(self.y_min, self.y_max, 5)  # 5개의 균등한 눈금 생성
+        self.axes.set_yticks(y_ticks)
+        self.axes.set_ylabel(f'{self.y_label}', fontsize=6)
+        self.axes.set_yticklabels([f'{int(tick)}' if tick == int(tick) else f'{tick:.2f}' for tick in y_ticks])
+
+        # 그리드 표시 (선택사항)
+        self.axes.grid(True, alpha=0.3)
+
+        self.axes.tick_params(labelsize=8)
+        # 여백 조정 - 좌우 여백을 최소화
+        self.figure.subplots_adjust(
+            left=0.13,    # 왼쪽 여백 (기본값 0.1)
+            right=0.98,   # 오른쪽 여백 (기본값 0.9)
+            bottom=0.2,   # 아래쪽 여백
+            top=0.95      # 위쪽 여백
+        )
+        self.draw()
+
+
+class DualSpeedSubscriberWidget(QWidget):
+    def __init__(self, color1='#005eff', color2='#e23a2e', y_min=0, y_max=10000, y_label='', label1='Speed1', label2='Speed2', parent=None):
+        super().__init__(parent)
+        self.current_speed1 = 0
+        self.current_speed2 = 0
+        self.initUI(color1, color2, y_min, y_max, y_label, label1, label2)
+
+    def set_speeds(self, speed1, speed2):
+        """두 개의 속도 값을 동시에 설정"""
+        self.current_speed1 = speed1
+        self.current_speed2 = speed2
+        self.update_graph()
+    
+    def set_speed1(self, speed):
+        """첫 번째 속도만 설정"""
+        self.current_speed1 = speed
+        self.update_graph()
+    
+    def set_speed2(self, speed):
+        """두 번째 속도만 설정"""
+        self.current_speed2 = speed
+        self.update_graph()
+
+    def initUI(self, color1, color2, y_min, y_max, y_label, label1, label2):
+        self.setContentsMargins(-1, -1, -1, -1)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        # y축 범위와 색상을 LiveDualSpeedGraph에 전달
+        self.graph = LiveDualSpeedGraph(color1, color2, y_min, y_max, y_label, label1, label2, self)
+        layout.addWidget(self.graph)
+        self.setLayout(layout)
+        self.setWindowTitle('ROS Dual Speed Graph')
+        self.setGeometry(0, 0, 800, 500)
+        self.setAutoFillBackground(True)
+
+    def update_graph(self):
+        self.graph.update_graph(self.current_speed1, self.current_speed2)

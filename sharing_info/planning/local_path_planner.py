@@ -35,19 +35,22 @@ class LocalPathPlanner:
         self.threshold_gap = 2.5
 
         self.t_reaction_change = 2
-        self.minimum_distance = 50 if self.type == 'ego' else 80
+        self.minimum_distance = 50
         self.d_lane = 3.5
-        self.velocity_range = [0, 80]
+        self.velocity_range = [0, 50]
         self.theta_range = [15, 20]
         self.L = 4.75
         self.max_path_len = 30
         self.default_len = 120
 
+        self.reject_once = False
+        self.reject_once_change_once = False
+
         self.safety = 0
         self.target_path = []
         self.confirm_safety = False
         self.check_safety = []
-        self.intersection_radius = 2.5
+        self.intersection_radius = 1.5
         self.inter_pt = None
         self.target_pose = [0,0]
 
@@ -55,12 +58,15 @@ class LocalPathPlanner:
         self.ttz_th = 5
         self.bsd = False
         self.bsd_cnt = 0
+
+        self.max_velocity = 0
     
     def update_value(self,car, user_input, target_info, target_path, dangerous_obstacle):
         self.local_pose = [car['x'], car['y']]
         self.current_velocity = car['v']
         self.current_signal = user_input['signal']
         self.scenario = (user_input['scenario'])
+        self.max_velocity = user_input['target_velocity']
         self.target_signal = target_info[1]
         self.target_velocity = target_info[2]
         self.target_pose = [target_info[3], target_info[4]]
@@ -110,6 +116,8 @@ class LocalPathPlanner:
                 return 'STRAIGHT'
             else: # if merging rejected
                 if (self.temp_signal != self.target_signal and self.target_signal == 5): #Target merging rejected
+                    if not self.reject_once:
+                        self.reject_once = True 
                     self.temp_signal = 3
                     self.change_state = False
                     return 'STRAIGHT'
@@ -168,11 +176,19 @@ class LocalPathPlanner:
             return None
         
         if pstate == 'CHANGE':
+            if self.reject_once:
+                pstate = 'EMERGENCY_CHANGE'
+        
+        if pstate == 'CHANGE':
             l_buffer_change = max(0, self.minimum_distance - (self.current_velocity * self.t_reaction_change))
             l_tr1 = self.current_velocity*self.t_reaction_change + l_buffer_change + 5
         elif pstate == 'EMERGENCY_CHANGE':
+            
             l_buffer_change = max(0, self.minimum_distance/3- (self.current_velocity * self.t_reaction_change))
-            l_tr1 = self.current_velocity*self.t_reaction_change + l_buffer_change + 5
+            if self.type == 'ego':
+                l_tr1 = self.current_velocity*1.5 + l_buffer_change + 5
+            else:
+                l_tr1 = self.current_velocity + l_buffer_change + 5
         else:
             l_tr1 = self.default_len
 
@@ -192,6 +208,8 @@ class LocalPathPlanner:
             self.change_id = idnidx2[0]
             local_path = tr1+tr3
         elif pstate == 'EMERGENCY_CHANGE':
+            if self.reject_once:
+                self.reject_once_change_once = True
             theta = self.theta_range[1] - ((self.current_velocity-self.velocity_range[0])/(self.velocity_range[1]-self.velocity_range[0])) * (self.theta_range[1]-self.theta_range[0])
             l_tr2 = self.d_lane / math.sin(theta)
             tr2, idnidx2 = self.get_emergency_change_path(idnidx1, l_tr2)
@@ -211,9 +229,12 @@ class LocalPathPlanner:
         return local_path
 
     def merge_safety_calc(self):
+        # 기본 조건 확인
         if self.local_path is None or len(self.target_path) < 2:
-            self.safety = 0 #MERGE ALGORITHM FAIL
+            self.safety = 0
+            return
 
+        # 교차점 찾기
         find = False
         inter_idx = 0
         l_target = 0
@@ -229,7 +250,8 @@ class LocalPathPlanner:
                     l_target = hi
                     find = True
                     break
-        
+
+        # 이미 교차점 지나쳤는지 확인
         if self.inter_pt is not None:
             if self.is_insied_circle(self.inter_pt, self.local_pose, self.intersection_radius):
                 self.safety = 0
@@ -237,35 +259,33 @@ class LocalPathPlanner:
                 self.check_safety = []
                 self.inter_pt = None
 
-        if find and self.target_signal in [1,2]: #and not self.confirm_safety 
+        # 안전도 계산
+        if find and not self.confirm_safety and self.target_signal in [1, 2]:
             self.inter_pt = inter_pt
             now_idx = phelper.find_nearest_idx(self.local_path, self.local_pose)
-            l_o1 = (inter_idx-now_idx)
-            l_o2 = self.current_velocity * ((l_target)/self.target_velocity) if self.target_velocity != 0 else 0
-            l_o3 = l_o1-l_o2
-            d_TC = self.current_velocity*(self.t_reaction_change)
+            l_o1 = (inter_idx - now_idx)
 
-            if inter_idx <= now_idx+5:
-                safety = 0  
+            t_v = c_v = self.max_velocity/3.6
+            #c_v = self.current_velocity
+            #t_v = self.target_velocity
+            l_o2 = c_v * ((l_target) / t_v) if t_v != 0 else 0
+            l_o3 = l_o1 - l_o2
+            d_TC = c_v * (self.t_reaction_change)
+
+            if inter_idx <= now_idx + 5:
+                safety = 0
             else:
-                safety = 1 if abs(l_o3) > d_TC else 2 # 1 : Safe, 2 : Dangerous
-            
-             # Safety 확인 로직
+                safety = 1 if abs(l_o3) > d_TC else 2
+
+            # 안전도 확정 로직
             if self.safety != safety:
                 if len(self.check_safety) < 1:
                     self.check_safety.append(safety)
                     self.safety = safety
-                    
             else:
                 self.check_safety.append(safety)
                 if len(self.check_safety) > 5:
                     self.confirm_safety = True
-        
-        # elif self.safety == 2:
-        #     if not self.is_insied_circle(self.inter_pt, self.local_pose, self.intersection_radius):
-        #         self.confirm_safety = False
-        #         self.check_safety = []
-        #         self.inter_pt = None
             
     def is_insied_circle(self, pt1, pt2, radius):
         if pt1 is None or pt2 is None:

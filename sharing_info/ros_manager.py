@@ -26,7 +26,7 @@ class ROSManager:
     
     def set_values(self):
         self.car = {'fix': 'No','x': 0, 'y': 0, 't': 0, 'v': 0}
-        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 30/3.6, 'scenario':0}
+        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 0, 'scenario':0}
         self.lidar_obstacles = []
         self.dangerous_obstacle = []
         self.obstacle_caution = False
@@ -109,11 +109,11 @@ class ROSManager:
         if not self.emergency_active:
             self.user_input['state'] = int(msg.data[0])
             self.user_input['signal'] = int(msg.data[1])
-            #self.user_input['target_velocity'] = msg.data[2]
+            self.user_input['target_velocity'] = msg.data[2]
             self.user_input['scenario'] = int(msg.data[3])
         else:
             self.user_input['state'] = int(msg.data[0])
-            #self.user_input['target_velocity'] = msg.data[2]
+            self.user_input['target_velocity'] = msg.data[2]
             self.user_input['scenario'] = int(msg.data[3])
     
     def lidar_cluster_cb(self, msg):

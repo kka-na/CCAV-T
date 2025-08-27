@@ -29,6 +29,7 @@ class MyApp(QMainWindow):
         self.ui.setupUi(self)
         self.RM = RosManager(type, test)
         self.type = type
+        self.mode = 'OFF'
 
         # 성능 모니터링 변수
         self.last_image_update_time = 0
@@ -47,7 +48,7 @@ class MyApp(QMainWindow):
         self.state = 0
         self.sig_in_viz = False
         self.state_list = {'temp': 0, 'prev': 0, 'target':0}
-        self.state_string = ['Normal', 'Left Change', 'Right Change', 'Straight', 'Safe', 'Dangerous', 'Init', 'Emergency']
+        self.state_string = ["정상 상황", "좌측 차선 변경 요청", "우측 차선 변경 요청", "직진 초기화",  "합류 시 안전 (허가)", "합류 시 위험 (거절)", "초기화", "긴급 상황 발생"]
         self.signal_buttons = {self.ui.leftButton:1, self.ui.rightButton:2, self.ui.straightButton:3,self.ui.eButton:7}
         self.selfdriving_buttons = [self.ui.stopButton, self.ui.startButton]
         self.check_map = {self.ui.check1 : 1, self.ui.check2 : 2, self.ui.check3 : 3, self.ui.check4 : 4, self.ui.check5:5, self.ui.check6:6}
@@ -57,12 +58,21 @@ class MyApp(QMainWindow):
 
     def set_widgets(self):
         self.rviz_widget = RvizWidget(self, self.type)
+        
+        colors = self.get_colors()
+
+        self.velocity_graph = DualSpeedSubscriberWidget(colors[0], colors[1], 0, 40, 'km/h', 'Ego', 'Target', self)
         self.rtt_graph = SpeedSubscriberWidget('#1a73eb', 0, 2000, 'ms', self)
-        self.speed_graph = SpeedSubscriberWidget('#e23a2e', 0, 0.05, 'mbps', self)
         self.delay_graph = SpeedSubscriberWidget('#fc8c03', 0, 1500, 'ms', self)
         self.packet_size_graph = SpeedSubscriberWidget('#fbbf12',0, 500, 'byte', self)
         self.packet_rate_graph = SpeedSubscriberWidget('#279847', 0, 100, '%', self)
-        self.initUI()
+        self.initUI(colors)
+    
+    def get_colors(self):
+        if self.type == 'ego':
+            return ['#f14c98', '#5eccf3']
+        else:
+            return ['#5eccf3', '#f14c98']
     
     def set_timers(self):
         # 일반 UI 업데이트 (통신 성능, 상태) - 빈도 낮춤
@@ -83,8 +93,25 @@ class MyApp(QMainWindow):
 
     def updateUI(self):
         """이미지를 제외한 UI 요소 업데이트 (빈도 낮음)"""
+        if self.RM.communication_on:
+            self.ui.commOnLabel.setText("  통신 중...  ")
+            self.ui.commOnLabel.setStyleSheet("QLabel {background-color: #31d45c; color: rgb(243, 243, 243);}")
+        else:
+            self.ui.commOnLabel.setText("  통신 대기  ")
+            self.ui.commOnLabel.setStyleSheet("QLabel {background-color: grey; color: rgb(243, 243, 243);}")
+        
+        if self.RM.signals['ego'] == 7 or self.RM.signals['target'] == 7:
+            self.ui.centralwidget.setStyleSheet("QWidget {background-color: #db4d65}")
+        else:
+            if self.mode == 'OFF':
+                self.ui.centralwidget.setStyleSheet("")
+            elif self.mode == 'ON':
+                self.ui.centralwidget.setStyleSheet("QWidget {background-color: #638dff}")
         self.comm_perform_update(self.RM.communication_performance)
         self.state_update(self.RM.signals)
+        self.velocity_graph.set_speeds(self.RM.ego_velocity, self.RM.target_velocity)
+        self.ui.egoVelocity.setText(str(self.RM.ego_velocity)+" km/h")
+        self.ui.targetVelocity.setText(str(self.RM.target_velocity)+" km/h")
     
     @pyqtSlot()
     def update_image(self):
@@ -103,16 +130,14 @@ class MyApp(QMainWindow):
                 print(f"Image display error: {e}")
     
     def comm_perform_update(self, communication_performance):
-        self.ui.tableWidget.setStyleSheet('background-color: rgb(238, 238, 236);')
-        self.ui.tableWidget.setItem(-1, 1, QTableWidgetItem(communication_performance['comulative_time']))
-        self.ui.tableWidget.setItem(0, 1, QTableWidgetItem(communication_performance['distance']))
-        self.ui.tableWidget.setItem(1, 1, QTableWidgetItem(communication_performance['rtt']))
-        self.ui.tableWidget.setItem(2, 1, QTableWidgetItem(communication_performance['speed']))
-        self.ui.tableWidget.setItem(3, 1, QTableWidgetItem(communication_performance['delay']))
-        self.ui.tableWidget.setItem(4, 1, QTableWidgetItem(communication_performance['packet_size']))
-        self.ui.tableWidget.setItem(5, 1, QTableWidgetItem(communication_performance['packet_rate']))
+        self.ui.cumTimeLabel.setText(str(communication_performance['comulative_time']))
+        self.ui.distanceLabel.setText(str(communication_performance['distance'])+" m")
+        self.ui.rttLabel.setText(str(communication_performance['rtt'])+" ms")
+        self.ui.delayLabel.setText(str(communication_performance['delay'])+" ms")
+        self.ui.sizeLabel.setText(str(communication_performance['packet_size'])+" byte")
+        self.ui.rateLabel.setText(str(communication_performance['packet_rate'])+" %")
         self.rtt_graph.set_speed(float(communication_performance['rtt']))
-        self.speed_graph.set_speed(float(communication_performance['speed']))
+        
         self.delay_graph.set_speed(float(communication_performance['delay']))
         self.packet_size_graph.set_speed(float(communication_performance['packet_size']))
         self.packet_rate_graph.set_speed(float(communication_performance['packet_rate']))
@@ -126,9 +151,9 @@ class MyApp(QMainWindow):
             self.ego_signal = ego_signal
             self.check_viz_timer()
         if target_signal != self.target_signal:
-            self.target_signal = target_signal
             if self.reject_once and target_signal == 0:
                 self.click_signal(self.state)
+            self.target_signal = target_signal
             self.check_viz_timer()
 
         self.ui.egoLabel.setText(self.state_string[self.ego_signal])
@@ -184,11 +209,19 @@ class MyApp(QMainWindow):
         self.RM.user_input[0] = value
         # 버튼 상태에 따른 배경색 설정
         if value == 0:  # stopButton 선택
+            self.mode = 'OFF'
             self.ui.stopButton.setStyleSheet("QPushButton {background-color: red;}")
             self.ui.startButton.setStyleSheet("")  # 기본 스타일로 리셋
+            self.ui.modeLabel.setText("자율주행 OFF")
+            self.ui.modeLabel.setStyleSheet("QLabel {background-color: gray; color: black}")
+            self.ui.centralwidget.setStyleSheet("")
         elif value == 1:  # startButton 선택
+            self.mode = 'ON'
             self.ui.startButton.setStyleSheet("QPushButton {background-color: blue;}")
             self.ui.stopButton.setStyleSheet("")  # 기본 스타일로 리셋
+            self.ui.modeLabel.setText("자율주행 ON")
+            self.ui.modeLabel.setStyleSheet("QLabel {background-color: #638dff; color: white}")
+            self.ui.centralwidget.setStyleSheet("QWidget {background-color: #638dff}")
             
         self.check_timer()
     
@@ -254,24 +287,38 @@ class MyApp(QMainWindow):
                 radio.setChecked(False)
 
     def state_triggered_viz(self):
-        if self.ego_signal in [1,2]:
-            self.ui.egoLabel.setStyleSheet("QLabel {background-color: #21dbad;}")
-        if self.target_signal in [1,2]:
-            self.ui.targetLabel.setStyleSheet("QLabel {background-color: #21dbad;}")
-        if self.ego_signal == 4:
-            self.ui.egoLabel.setStyleSheet("QLabel {background-color: #5471ff;}")
-        if self.target_signal == 4:
-            self.ui.targetLabel.setStyleSheet("QLabel {background-color: #5471ff;}")
-        if self.ego_signal in [5,7]:
-            self.ui.egoLabel.setStyleSheet("QLabel {background-color: #ff546b;}")
-        if self.target_signal in [5,7]:
-            self.ui.targetLabel.setStyleSheet("QLabel {background-color: #ff546b;}")
+        # 신호 값에 따른 색상 매핑
+        color_map = {
+            1: "#21dbad", 2: "#21dbad",
+            4: "#5471ff",
+            5: "#fc7b03", 
+            7: "#ff546b"
+        }
+        
+        # ego_signal 처리
+        if self.ego_signal in [0, 3]:
+            self.ui.egoLabel.setStyleSheet("")
+        elif self.ego_signal in color_map:
+            color = color_map[self.ego_signal]
+            self.ui.egoLabel.setStyleSheet(f"QLabel {{background-color: {color}; color: white;}}")
+        
+        # target_signal 처리
+        if self.target_signal in [0, 3]:
+            self.ui.targetLabel.setStyleSheet("")
+        elif self.target_signal in color_map:
+            color = color_map[self.target_signal]
+            self.ui.targetLabel.setStyleSheet(f"QLabel {{background-color: {color}; color: white;}}")
 
-    def initUI(self):
+    def initUI(self, colors):
         self.set_conntection()
+        self.ui.egoName.setStyleSheet(f"QLabel {{border: 2px solid black; border-radius: 30px; background-color: {colors[0]};}}")
+        self.ui.targetName.setStyleSheet(f"QLabel {{border: 2px solid black; border-radius: 30px; background-color: {colors[1]};}}")
+        self.ui.egoVelocity.setStyleSheet(f"QLabel {{color: {colors[0]}}}")
+        self.ui.targetVelocity.setStyleSheet(f"QLabel {{color: {colors[1]}}}")
+        
         self.ui.rvizLayout.addWidget(self.rviz_widget)
         self.ui.RTTLayout.addWidget(self.rtt_graph)
-        self.ui.SpeedLayout.addWidget(self.speed_graph)
+        self.ui.velocityLayout.addWidget(self.velocity_graph)
         self.ui.DelayLayout.addWidget(self.delay_graph)
         self.ui.PacketSizeLayout.addWidget(self.packet_size_graph)
         self.ui.PacketRateLayout.addWidget(self.packet_rate_graph)
