@@ -198,8 +198,8 @@ class SocketHandler:
                     obstacles.append(obstacle)
             state, path, obstacles = self.organize_data(len(data), sharing_information, obstacles)
             rx_message = self.get_log_datum(state, path, obstacles)
-            self.logger.info(f"Rx cnt:{self.tx_cnt_from_rx}")
-            self.logger.info(rx_message)
+            self.logger.info(f"Rx cnt:{self.tx_cnt_from_rx}\n"+rx_message)
+            self.logger.info(self.get_performance_log())  
             return [state, path, obstacles]
         else:
             return [0, 0, 0]
@@ -228,7 +228,7 @@ class SocketHandler:
             distance = math.sqrt((self.rx_latitude - self.tx_latitude) ** 2 + (self.rx_longtude - self.tx_longitude) ** 2)
             self.communication_performance['v2x'] = 1
             self.communication_performance['distance'] = distance
-            self.logger.info(self.get_performance_log())  
+            
             return self.communication_performance        
 
     def calc_rate(self, hz):
@@ -247,8 +247,7 @@ class SocketHandler:
     def send(self, data, send_size):
         try:
             self.fd.sendall(data)
-            self.logger.info(f"Tx cnt:{self.tx_cnt}")
-            self.logger.info(self.tx_message)
+            self.logger.info(f"Tx cnt:{self.tx_cnt}\n"+self.tx_message)
             self.rtt_ts_list.append([self.tx_cnt, time.time()])
             self.tx_cnt += 1
             self.update_throughput_metrics(send_size)
@@ -394,7 +393,7 @@ class SocketHandler:
     
     def get_log_datum(self, vehicle_state, vehicle_path, vehicle_obstacles):
         if len(vehicle_state) > 0:
-            state = f"Shared Message\nstate:{vehicle_state[0]} lat:{vehicle_state[2]} lng:{vehicle_state[3]} h:{vehicle_state[4]} v:{vehicle_state[5]}\n"
+            state = f"Shared Message\nstate:{vehicle_state[0]} signal:{vehicle_state[1]} lat:{vehicle_state[2]} lng:{vehicle_state[3]} h:{vehicle_state[4]} v:{vehicle_state[5]}\n"
         else:
             state = "No message to Send\n"
         if vehicle_path != [] and len(vehicle_path[0]) > 1:

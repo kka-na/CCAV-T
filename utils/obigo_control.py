@@ -81,8 +81,8 @@ class ObigoTest:
 
         # 비상 상황 식별자 추가
         state = msg.state.data
-        if state in [4,5,6,7]:
-            self.emergency_type = self.emergency_type_arr[state-4]
+        if state == 7 :
+            self.emergency_type = '고장 차량'
         elif self.emergency_type != '정상':
             self.emergency_type = '정상'
 
