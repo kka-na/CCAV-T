@@ -29,7 +29,7 @@ class SharingInformation(Structure):
         ("path_y", c_float*30),
         ("obstacle_num", c_uint16),
         #TODO : 0 -> 25 for testing
-        ("obstacle", ObstacleInformation*10)
+        ("obstacle", ObstacleInformation*12)
     ]
 
 

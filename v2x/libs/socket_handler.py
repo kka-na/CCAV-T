@@ -169,7 +169,7 @@ class SocketHandler:
                     self.logger.warning(f"Skipping obstacle {i} due to insufficient fields: {len(obs)}")
                     
             # 안전한 장애물 개수 제한 - 점진적 테스트를 위해 작게 시작
-            MAX_OBSTACLES = min(10, len(valid_obstacles))  # 우선 10개로 제한
+            MAX_OBSTACLES = min(20, len(valid_obstacles))  # 우선 10개로 제한
             safe_obstacles = valid_obstacles[:MAX_OBSTACLES]
             
             self.logger.info(f"Processing {len(safe_obstacles)} obstacles out of {len(obstacles)} input")
@@ -688,8 +688,11 @@ class SocketHandler:
         # 0) 푸시
         self._win.append((t, s))
 
+        L_ms = 200
+        cutoff = t - (self._W + L_ms/1000.0)
+
         # 1) 10초 밖 제거
-        cutoff = t - self._W
+        #cutoff = t - self._W
         changed = False
         while self._win and self._win[0][0] < cutoff:
             self._win.popleft()
