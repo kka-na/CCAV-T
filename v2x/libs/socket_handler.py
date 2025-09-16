@@ -62,6 +62,10 @@ class SocketHandler:
     def connect(self, IP):
         try:
             self.fd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # 소켓 최적화 옵션 추가
+            self.fd.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)  # Nagle 알고리즘 비활성화
+            self.fd.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)  # 송신 버퍼 증가
+            self.fd.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)  # 수신 버퍼 증가
             if self.interface > 0:
                 interface_name = self.interface_list[self.interface]
                 try:
