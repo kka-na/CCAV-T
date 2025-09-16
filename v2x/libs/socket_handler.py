@@ -35,9 +35,6 @@ class SocketHandler:
         self.rtt_ts_list = []
         self.tx_message = ""
 
-        # 윈도우 기반 throughput 계산을 위한 변수들
-        self.tx_rate = 0
-        self.rx_rate= 0
         self.window_size = 10.0  # 10초 윈도우
         self.tx_history = deque()  # (timestamp, bytes_sent) 튜플들 저장
         self.total_bytes_sent = 0
@@ -48,7 +45,23 @@ class SocketHandler:
         self.backoff = 0.5  # 초, 재연결 시작 backoff
         self.backoff_max = 5.0
 
-        
+        # 새로 추가: 10초 패킷 윈도우
+        self.window_sec = 10.0
+        self.rx_pkt_window = deque() 
+
+        self._W = 10.0
+        self._win = deque()   # (t_mono, seq)
+        self._seen = set()
+        self.communication_performance2 = {
+            'packet_success_pct': 0.0,
+            'packet_receive_rate_pps': 0.0,
+            'rx_window_span': 0.0,
+            'rx_unique_in_win': 0,
+            'rx_min_seq': 0,
+            'rx_max_seq': 0,
+        }
+
+        self._rx_stream = bytearray()
         self.set_logger(type)
 
     def set_logger(self, type):
@@ -174,13 +187,13 @@ class SocketHandler:
                 
             p_dummy.contents.type = socket.htonl(EM_PT_RAW_DATA)
             p_dummy.contents.len = socket.htons(size + 2)
-
+        
             p_share_info = cast(addressof(p_dummy.contents.data), POINTER(SharingInformation))
             
             # 기본 정보 설정 with validation
             p_share_info.contents.tx_cnt = socket.htonl(self.tx_cnt)
             p_share_info.contents.tx_cnt_from_rx = socket.htonl(self.tx_cnt_from_rx)
-            p_share_info.contents.timestamp = int(time.time() * 1000)
+            p_share_info.contents.timestamp = self.htobe64(int(time.time() * 1000))
             
             try:
                 p_share_info.contents.state = int(state[0])
@@ -205,6 +218,7 @@ class SocketHandler:
                         break
             
             # 장애물 정보 설정
+            
             p_share_info.contents.obstacle_num = socket.htons(len(safe_obstacles))
             
             if len(safe_obstacles) > 0:
@@ -306,8 +320,6 @@ class SocketHandler:
                     continue
 
             if total_sent == send_size:
-                if self.rx_rate > 0:
-                    self.tx_rate += 1
                 self.logger.info(f"Tx cnt:{self.tx_cnt}\n"+self.tx_message)
                 self.logger.debug(f"Sent {send_size} bytes successfully")
                 self.rtt_ts_list.append([self.tx_cnt, time.time()])
@@ -341,10 +353,41 @@ class SocketHandler:
             sharing_information = tlvc.data
             self.set_rx_values(sharing_information)
             self.tx_cnt_from_rx = socket.ntohl(sharing_information.tx_cnt)
+
+            # if self.rx_rate > 0 and not self.start_prr :
+            #     self.center_value = self.tx_cnt_from_rx-1
+            #     self.start_prr = True
+
+            # if self.center_value > 0:
+            #     prr = self.rx_rate / (self.tx_cnt_from_rx - self.center_value) * 100
+            #     self.communication_performance['packet_rate'] = prr
+
+            self._update_prr_pps(self.tx_cnt_from_rx)
+
             self.calc_rtt(socket.ntohl(sharing_information.tx_cnt_from_rx))
             self.calc_delay(sharing_information.timestamp)
+
+
+            # --- 장애물 개수 경계 검사 추가 ---
+            reported_obs = socket.ntohs(sharing_information.obstacle_num)
+
+            # tlvc_ofs는 이미 계산됨
+            base_size = sizeof(V2x_App_SI_TLVC)  # SharingInformation 포함
+            obs_size  = sizeof(ObstacleInformation)
+
+            # 프레임에서 실제로 파싱 가능한 최대 장애물 수
+            if len(data) < tlvc_ofs + base_size:
+                max_obs_by_len = 0
+            else:
+                payload_room = len(data) - (tlvc_ofs + base_size)
+                max_obs_by_len = max(0, payload_room // obs_size)
+
+            obs_count = min(reported_obs, max_obs_by_len)
+            # -----------------------------------
+
+
             obstacles = []
-            for i in range(socket.ntohs(sharing_information.obstacle_num)):
+            for i in range(obs_count):
                 ofs = tlvc_ofs+sizeof(V2x_App_SI_TLVC)+(i*sizeof(ObstacleInformation))
                 if len(data) < ofs + sizeof(ObstacleInformation):
                     pass
@@ -387,27 +430,62 @@ class SocketHandler:
             return self.communication_performance        
 
     def calc_rate(self, hz):
-        rx_rate = min(100, (float(self.rx_rate)/self.tx_rate)*100) if self.rx_rate > 0 else 0
-        self.communication_performance['packet_rate'] = rx_rate
-        if self.rx_rate >= hz:
-            self.rx_rate = 1
-        if self.tx_rate >= hz:
-            self.tx_rate = 1
+        #rx_rate = min(100, (float(self.rx_rate)/self.tx_rate)*100) if self.rx_rate > 0 else 0
+        # self.communication_performance['packet_rate'] = rx_rate
+        # if self.rx_rate >= hz:
+        #     self.rx_rate = 1
+        # if self.tx_rate >= hz:
+        #     self.tx_rate = 1
         return 1
 
     def calc_delay(self, rx_timestamp):
-        delay = int(time.time()*1000)-rx_timestamp
+        try:
+            rx_ts_ms = self.be64toh(rx_timestamp)  # 64-bit big-endian -> host
+        except Exception:
+            rx_ts_ms = int(rx_timestamp)  # 호환 (기존 환경 대응)
+        delay = int(time.time()*1000) - rx_ts_ms
         self.communication_performance['delay'] = delay
-    
+        
     
     def receive(self):
+        # TCP 스트림 -> 프레임 분리
+        # 헤더: magic(4B, u32, network order) + len(2B, u16, network order)
+        # total_frame_len = 6 + len_field
         self.fd.settimeout(5)
         try:
-            data = self.fd.recv(sizeof(c_char)*MAX_TX_PACKET_TO_OBU)
-            return data
+            chunk = self.fd.recv(sizeof(c_char)*MAX_TX_PACKET_TO_OBU)
+            if not chunk:
+                return None
+            self._rx_stream.extend(chunk)
+
+            frames = []
+            while True:
+                # 헤더가 부족하면 더 받기
+                if len(self._rx_stream) < 6:
+                    break
+                # 헤더 파싱 (네트워크 바이트순서)
+                magic = struct.unpack_from('!I', self._rx_stream, 0)[0]
+                frame_len_field = struct.unpack_from('!H', self._rx_stream, 4)[0]
+                total_len = 6 + frame_len_field
+
+                # total_len 이상 도착했는지 확인
+                if len(self._rx_stream) < total_len:
+                    break
+
+                # 한 프레임 추출
+                frame = bytes(self._rx_stream[:total_len])
+                del self._rx_stream[:total_len]
+                frames.append(frame)
+
+            # 한 번에 여러 프레임이 들어올 수 있지만,
+            # 현재 상위 rx() 로직은 한 번에 하나만 처리하므로 가장 최근 프레임을 반환
+            if frames:
+                return frames[-1]
+            return None
         except socket.timeout as t:
             self.logger.error(f"{t}")
             return None
+
         
     def get_base(self):
         buf = (c_char * MAX_TX_PACKET_TO_OBU)()
@@ -434,7 +512,8 @@ class SocketHandler:
         self.rx_rate = 0
         self.rx_latitude = 0
         self.rx_longtude = 0
-        
+        self.start_prr = False
+        self.center_value = 0
         if self.rx_buf == None:
             self.logger.error("Receive memory setting error")
             return -1
@@ -528,6 +607,12 @@ class SocketHandler:
         packed_value = struct.pack('>Q', value)
         return struct.unpack('>Q', packed_value)[0]
 
+    def be64toh(self, value):
+        # value가 이미 host로 들어왔다면 그대로 반환해도 되지만,
+        # ctypes 구조체가 네트워크 순서로 담겨있다면 아래처럼 바꿉니다.
+        return struct.unpack('>Q', struct.pack('>Q', value))[0]
+
+
     def print_hexa(self, data):
         self.logger.info("Binary data in hexadecimal: ", end="")
         for byte in data:  # buf의 각 바이트에 대해 반복
@@ -595,3 +680,57 @@ class SocketHandler:
 
             
             self.last_mbps_calc_time = current_time
+    
+    def _update_prr_pps(self, seq: int):
+        t = time.monotonic()
+        s = int(seq)
+
+        # 0) 푸시
+        self._win.append((t, s))
+
+        # 1) 10초 밖 제거
+        cutoff = t - self._W
+        changed = False
+        while self._win and self._win[0][0] < cutoff:
+            self._win.popleft()
+            changed = True
+        # 제거가 있었으면 seen 재구성(간단/안전)
+        if changed:
+            self._seen = {x[1] for x in self._win}
+
+        # 2) 고유 seq 추가
+        self._seen.add(s)
+
+        if not self._win or not self._seen:
+            # 비었을 때 0 처리
+            self.communication_performance2['packet_success_pct'] = 0.0
+            self.communication_performance2['packet_receive_rate_pps'] = 0.0
+            self.communication_performance2['rx_window_span'] = 0.0
+            self.communication_performance2['rx_unique_in_win'] = 0
+            self.communication_performance2['rx_min_seq'] = 0
+            self.communication_performance2['rx_max_seq'] = 0
+            self.communication_performance['packet_rate'] = 0.0  # 기존 필드 유지 시
+            print(0.0, 0.0, 0.0, 0, 0, 0)
+            return
+
+        # 3) 집계
+        span = max(1e-3, self._win[-1][0] - self._win[0][0])
+        uniq = len(self._seen)
+        mn, mx = min(self._seen), max(self._seen)
+        sent_est = max(1, mx - mn + 1)
+
+        prr = (uniq / sent_est) * 100.0         # PRR (%)
+        pps = uniq / self._W                    # PPS (pkt/s, 수신율)
+
+        # 4) 저장/출력 (필요한 것만)
+        self.communication_performance2['packet_success_pct'] = round(prr, 1)
+        self.communication_performance2['packet_receive_rate_pps'] = round(pps, 2)
+        self.communication_performance2['rx_window_span'] = round(span, 3)
+        self.communication_performance2['rx_unique_in_win'] = uniq
+        self.communication_performance2['rx_min_seq'] = mn
+        self.communication_performance2['rx_max_seq'] = mx
+
+        # 기존 UI에서 packet_rate가 퍼센트 의미면 그대로 매핑
+        self.communication_performance['packet_rate'] = round(prr, 2)
+
+        print(prr, pps, span, uniq, mn, mx)

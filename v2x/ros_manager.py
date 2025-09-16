@@ -116,7 +116,7 @@ class RosManager:
             self.rate.sleep()
     
     def do_rx(self):
-        rate = rospy.Rate(500)
+        rate = rospy.Rate(1000)
         while not rospy.is_shutdown() and not self.shutdown_event.is_set():
             rx_res = self.v2v_sharing.do_rx()
             if rx_res == None:

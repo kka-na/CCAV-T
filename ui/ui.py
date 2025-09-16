@@ -64,7 +64,7 @@ class MyApp(QMainWindow):
         self.velocity_graph = DualSpeedSubscriberWidget(colors[0], colors[1], 0, 40, 'km/h', 'Ego', 'Target', self)
         self.rtt_graph = SpeedSubscriberWidget('#1a73eb', 0, 2000, 'ms', self)
         self.delay_graph = SpeedSubscriberWidget('#fc8c03', 0, 1500, 'ms', self)
-        self.packet_size_graph = SpeedSubscriberWidget('#fbbf12',0, 500, 'byte', self)
+        self.packet_size_graph = SpeedSubscriberWidget('#fbbf12',0, 900, 'byte', self)
         self.packet_rate_graph = SpeedSubscriberWidget('#279847', 0, 100, '%', self)
         self.initUI(colors)
     
