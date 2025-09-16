@@ -121,7 +121,6 @@ class RosManager:
             rx_res = self.v2v_sharing.do_rx()
             if rx_res == None:
                 rospy.logerr("[V2X ROSManager] No Rx Data from Target")
-                
                 rate.sleep()
                 continue
             else:
