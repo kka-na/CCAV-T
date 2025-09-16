@@ -21,7 +21,7 @@ class RosManager:
         self.set_protocol()
         
     def set_values(self):
-        self.Hz = 10
+        self.Hz = 100
         self.rx_res = None
         self.rate = rospy.Rate(self.Hz)
         self.info_received = False
@@ -111,7 +111,8 @@ class RosManager:
             tx_res = self.v2v_sharing.do_tx(self.vehicle_state, self.vehicle_path, self.vehicle_obstacles)
             if tx_res<0:
                 rospy.logerr("[V2X ROSManager] Tx Send Data Failed")
-                return -1
+                self.rate.sleep()
+                continue
             self.rate.sleep()
     
     def do_rx(self):

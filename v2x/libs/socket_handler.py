@@ -107,13 +107,13 @@ class SocketHandler:
         p_overall = self.get_p_overall(self.tx_cnt)
         self.set_tx_values(state)
 
-        size = sizeof(V2x_App_SI_TLVC)+sizeof(ObstacleInformation)*len(obstacles)
+        size = sizeof(V2x_App_SI_TLVC)#+sizeof(ObstacleInformation)*5#len(obstacles)
         if self.chip == 'out':
             p_dummy = cast(addressof(p_overall.contents) + sizeof(TLVC_Overall_V2), POINTER(V2x_App_SI_TLVC))
         else:
             p_dummy = cast(addressof(p_overall.contents) + sizeof(TLVC_Overall), POINTER(V2x_App_SI_TLVC))
         p_dummy.contents.type = socket.htonl(EM_PT_RAW_DATA)
-        p_dummy.contents.len = socket.htons(size + 2)
+        p_dummy.contents.len = socket.htons(size - 6)
 
         p_share_info = cast(addressof(p_dummy.contents.data), POINTER(SharingInformation))
         p_share_info.contents.tx_cnt = socket.htonl(self.tx_cnt)
@@ -144,29 +144,38 @@ class SocketHandler:
                 obstacle.contents.distance = float(obj[5])
                 obstacle.contents.dangerous = int(obj[6])
         
+        package_len = 2 + size
+
         crc16 = cast(addressof(p_dummy.contents)+size, POINTER(c_uint16))
         crc_data = bytearray(p_dummy.contents)
-        crc16.contents.value = socket.htons(calc_crc16(crc_data, size))
-        
-        package_len = 8 + size
-        p_overall.contents.len_package = socket.htons(package_len)
+        crc16.contents.value = socket.htons(calc_crc16(crc_data, size))        
 
         self.add_ext_status_data(p_overall, package_len)
 
+        total_payload_len = 0
         if self.chip == 'out':
-            self.hdr.contents.len = socket.ntohs(sizeof(V2x_App_Hdr)+6+sizeof(TLVC_Overall_V2)+socket.ntohs(p_overall.contents.len_package))
+            total_payload_len = sizeof(TLVC_Overall_V2) + socket.ntohs(p_overall.contents.len_package)
         else:
-            self.hdr.contents.len = socket.ntohs(sizeof(V2x_App_Hdr)+6+sizeof(TLVC_Overall)+socket.ntohs(p_overall.contents.len_package))
+            total_payload_len = sizeof(TLVC_Overall) + socket.ntohs(p_overall.contents.len_package)
+
+        # if self.chip == 'out':
+        #     self.hdr.contents.len = socket.ntohs(sizeof(V2x_App_Hdr)+6+sizeof(TLVC_Overall_V2)+socket.ntohs(p_overall.contents.len_package))
+        # else:
+        #     self.hdr.contents.len = socket.ntohs(sizeof(V2x_App_Hdr)+6+sizeof(TLVC_Overall)+socket.ntohs(p_overall.contents.len_package))
+        self.hdr.contents.len = socket.htons(sizeof(V2x_App_TxMsg) + total_payload_len)
         self.hdr.contents.seq = 0
         self.hdr.contents.payload_id = socket.htons(0x10)
         self.tx_msg.contents.psid = socket.htonl(EM_V2V_MSG)
-        send_len = socket.ntohs(self.hdr.contents.len) + 6
+        send_len = sizeof(V2x_App_Hdr) + socket.ntohs(self.hdr.contents.len)
 
-        crc16 = pointer(c_uint16.from_buffer(self.tx_buf, send_len - 2))
-        _crc16 = calc_crc16(self.tx_buf[SIZE_MAGIC_NUMBER_OF_HEADER:], send_len-6)
-        crc16.contents.value = socket.htons(_crc16)
-        
-        data = self.tx_buf[:send_len]
+        # crc16 = pointer(c_uint16.from_buffer(self.tx_buf, send_len - 2))
+        # _crc16 = calc_crc16(self.tx_buf[SIZE_MAGIC_NUMBER_OF_HEADER:], send_len-6)
+        # crc16.contents.value = socket.htons(_crc16)
+        _crc16 = calc_crc16(self.tx_buf[4:], send_len - 4)
+        crc16_final = pointer(c_uint16.from_buffer(self.tx_buf, send_len))
+        crc16_final.contents.value = socket.htons(_crc16)
+
+        data = self.tx_buf[:send_len+2]
         
         self.communication_performance['packet_size'] = send_len
         self.tx_message = self.get_log_datum(state,paths,obstacles)
