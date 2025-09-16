@@ -343,7 +343,7 @@ class SocketHandler:
         p_overall.contents.num_package += 1
         
         p_overall.contents.len_package = socket.htons(package_len)
-        crc_data = bytearray(addressof(p_overall.contents))
+        crc_data = bytearray(p_overall.contents)
         if self.chip == 'out':
             p_overall.contents.crc = socket.htons(calc_crc16(crc_data, sizeof(TLVC_Overall_V2)-2))
         else:
@@ -360,7 +360,7 @@ class SocketHandler:
         p_status.contents.hw_ver = socket.htons(2)
         p_status.contents.sw_ver = socket.htons(3)
         p_status.contents.timestamp = self.htobe64(self.get_keti_time())
-        crc_data = bytearray(addressof(p_status.contents))
+        crc_data = bytearray(p_status.contents)
         if self.chip == 'out':
             p_status.contents.cpu_temp = 50
             p_status.contents.peri_temp = 50

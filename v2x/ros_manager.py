@@ -21,7 +21,8 @@ class RosManager:
         self.set_protocol()
         
     def set_values(self):
-        self.Hz = 5
+        self.Hz = 10
+        self.rx_res = None
         self.rate = rospy.Rate(self.Hz)
         self.info_received = False
         self.shutdown_event = threading.Event()
@@ -114,14 +115,17 @@ class RosManager:
             self.rate.sleep()
     
     def do_rx(self):
+        rate = rospy.Rate(500)
         while not rospy.is_shutdown() and not self.shutdown_event.is_set():
             rx_res = self.v2v_sharing.do_rx()
             if rx_res == None:
                 rospy.logerr("[V2X ROSManager] No Rx Data from Target")
-                return -1
+                
+                rate.sleep()
+                continue
             else:
-                self.publish(rx_res)
-            self.rate.sleep()
+                self.rx_res = rx_res
+            rate.sleep()
     
     def do_calc_rate(self):
         rate = rospy.Rate(1)
@@ -134,13 +138,15 @@ class RosManager:
             rate.sleep()
 
     def do_calc(self):
+        rate = rospy.Rate(10)
         while not rospy.is_shutdown() and not self.shutdown_event.is_set():
             calc_res = self.v2v_sharing.do_calc()
             if calc_res == -1:
                 pass
             else:
+                self.publish(self.rx_res)
                 self.publish_calc(calc_res)
-            self.rate.sleep()
+            rate.sleep()
             
 
     def execute(self):
