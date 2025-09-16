@@ -7,6 +7,8 @@ import struct
 import math
 import time
 import logging
+from ctypes import string_at
+
 from collections import deque
 
 from .v2x_interface import *
@@ -34,12 +36,18 @@ class SocketHandler:
         self.tx_message = ""
 
         # 윈도우 기반 throughput 계산을 위한 변수들
+        self.tx_rate = 0
+        self.rx_rate= 0
         self.window_size = 10.0  # 10초 윈도우
         self.tx_history = deque()  # (timestamp, bytes_sent) 튜플들 저장
         self.total_bytes_sent = 0
         self.first_tx_time = None
         self.last_mbps_calc_time = 0
         self.mbps_calc_interval = 1.0  # 1초마다 mbps 계산
+
+        self.backoff = 0.5  # 초, 재연결 시작 backoff
+        self.backoff_max = 5.0
+
         
         self.set_logger(type)
 
@@ -59,13 +67,20 @@ class SocketHandler:
         self.logger.addHandler(file_handler)
         #self.logger.addHandler(console_handler)
 
+
+
     def connect(self, IP):
         try:
             self.fd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # 소켓 최적화 옵션 추가
-            self.fd.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)  # Nagle 알고리즘 비활성화
-            self.fd.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)  # 송신 버퍼 증가
-            self.fd.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)  # 수신 버퍼 증가
+            
+            # V2X 통신에 최적화된 소켓 설정
+            self.fd.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)  # Nagle 비활성화
+            self.fd.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1048576)  # 1MB 송신 버퍼
+            self.fd.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1048576)  # 1MB 수신 버퍼
+            
+            # 논블로킹 모드는 사용하지 않고, 타임아웃만 줄임
+            # self.fd.setblocking(False)  # 이 줄은 주석처리
+            
             if self.interface > 0:
                 interface_name = self.interface_list[self.interface]
                 try:
@@ -76,10 +91,14 @@ class SocketHandler:
                 
             servaddr = socket.getaddrinfo(IP, DEST_PORT, socket.AF_INET, socket.SOCK_STREAM)
             self.fd.connect(servaddr[0][4])
-            self.logger.debug("Socket Opend")
+            
+            # 연결 후 Keep-Alive 설정
+            self.fd.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            
+            self.logger.debug("Socket Opened with optimized settings")
             return 1
         except socket.error as e:
-            self.logger.error(f"{e}")
+            self.logger.error(f"Connection error: {e}")
             return -1
     
     def register(self):
@@ -104,73 +123,205 @@ class SocketHandler:
         return self.send(data, SIZE_WSR_DATA)
     
     def tx(self, state, paths, obstacles):
-        p_overall = self.get_p_overall(self.tx_cnt)
-        self.set_tx_values(state)
+        try:
+            # 입력 데이터 검증
+            if not state or len(state) < 6:
+                self.logger.error(f"Invalid state data: {state}")
+                return -1
+                
+            # 장애물 데이터 검증 및 정리
+            valid_obstacles = []
+            for i, obs in enumerate(obstacles):
+                if len(obs) >= 7:  # 필수 필드 개수 확인
+                    # 데이터 타입 검증
+                    try:
+                        cls = int(obs[0])
+                        enu_x = float(obs[1])
+                        enu_y = float(obs[2]) 
+                        heading = float(obs[3])
+                        velocity = float(obs[4])
+                        distance = float(obs[5])
+                        dangerous = int(obs[6])
+                        
+                        # NaN이나 무한대 값 체크
+                        if any(not math.isfinite(val) for val in [enu_x, enu_y, heading, velocity, distance]):
+                            self.logger.warning(f"Skipping obstacle {i} due to invalid float values")
+                            continue
+                            
+                        valid_obstacles.append([cls, enu_x, enu_y, heading, velocity, distance, dangerous])
+                    except (ValueError, TypeError) as e:
+                        self.logger.warning(f"Skipping obstacle {i} due to data conversion error: {e}")
+                        continue
+                else:
+                    self.logger.warning(f"Skipping obstacle {i} due to insufficient fields: {len(obs)}")
+                    
+            # 안전한 장애물 개수 제한 - 점진적 테스트를 위해 작게 시작
+            MAX_OBSTACLES = min(10, len(valid_obstacles))  # 우선 10개로 제한
+            safe_obstacles = valid_obstacles[:MAX_OBSTACLES]
+            
+            self.logger.info(f"Processing {len(safe_obstacles)} obstacles out of {len(obstacles)} input")
+            
+            p_overall = self.get_p_overall(self.tx_cnt)
+            self.set_tx_values(state)
 
-        size = sizeof(V2x_App_SI_TLVC)+sizeof(ObstacleInformation)*len(obstacles)
-        if self.chip == 'out':
-            p_dummy = cast(addressof(p_overall.contents) + sizeof(TLVC_Overall_V2), POINTER(V2x_App_SI_TLVC))
-        else:
-            p_dummy = cast(addressof(p_overall.contents) + sizeof(TLVC_Overall), POINTER(V2x_App_SI_TLVC))
-        p_dummy.contents.type = socket.htonl(EM_PT_RAW_DATA)
-        p_dummy.contents.len = socket.htons(size + 2)
+            size = sizeof(V2x_App_SI_TLVC) + sizeof(ObstacleInformation) * len(safe_obstacles)
+            self.logger.debug(f"Calculated payload size: {size} bytes")
+            
+            if self.chip == 'out':
+                p_dummy = cast(addressof(p_overall.contents) + sizeof(TLVC_Overall_V2), POINTER(V2x_App_SI_TLVC))
+            else:
+                p_dummy = cast(addressof(p_overall.contents) + sizeof(TLVC_Overall), POINTER(V2x_App_SI_TLVC))
+                
+            p_dummy.contents.type = socket.htonl(EM_PT_RAW_DATA)
+            p_dummy.contents.len = socket.htons(size + 2)
 
-        p_share_info = cast(addressof(p_dummy.contents.data), POINTER(SharingInformation))
-        p_share_info.contents.tx_cnt = socket.htonl(self.tx_cnt)
-        p_share_info.contents.tx_cnt_from_rx = socket.htonl(self.tx_cnt_from_rx)
-        p_share_info.contents.timestamp = int(time.time()*1000)
-        p_share_info.contents.state = state[0]
-        p_share_info.contents.signal = state[1]
-        p_share_info.contents.latitude = state[2]
-        p_share_info.contents.longitude = state[3]
-        p_share_info.contents.heading = state[4]
-        p_share_info.contents.velocity = state[5]
+            p_share_info = cast(addressof(p_dummy.contents.data), POINTER(SharingInformation))
+            
+            # 기본 정보 설정 with validation
+            p_share_info.contents.tx_cnt = socket.htonl(self.tx_cnt)
+            p_share_info.contents.tx_cnt_from_rx = socket.htonl(self.tx_cnt_from_rx)
+            p_share_info.contents.timestamp = int(time.time() * 1000)
+            
+            try:
+                p_share_info.contents.state = int(state[0])
+                p_share_info.contents.signal = int(state[1])
+                p_share_info.contents.latitude = float(state[2])
+                p_share_info.contents.longitude = float(state[3])
+                p_share_info.contents.heading = float(state[4])
+                p_share_info.contents.velocity = float(state[5])
+            except (ValueError, IndexError) as e:
+                self.logger.error(f"Error setting vehicle state: {e}")
+                return -1
 
-        if len(paths) > 0:
-            for i, x in enumerate(paths[0]):
-                p_share_info.contents.path_x[i] = x
-            for i, y in enumerate(paths[1]):
-                p_share_info.contents.path_y[i] = y
-        
-        p_share_info.contents.obstacle_num = socket.htons(len(obstacles))
-        if len(obstacles) > 0:
-            for o, obj in enumerate(obstacles):
-                obstacle = cast(addressof(p_share_info.contents)+sizeof(SharingInformation)+(o*sizeof(ObstacleInformation)), POINTER(ObstacleInformation))
-                obstacle.contents.cls = int(obj[0])
-                obstacle.contents.enu_x = float(obj[1])
-                obstacle.contents.enu_y = float(obj[2])
-                obstacle.contents.heading = float(obj[3])
-                obstacle.contents.velocity = float(obj[4])
-                obstacle.contents.distance = float(obj[5])
-                obstacle.contents.dangerous = int(obj[6])
-        
-        crc16 = cast(addressof(p_dummy.contents)+size, POINTER(c_uint16))
-        crc_data = bytearray(p_dummy.contents)
-        crc16.contents.value = socket.htons(calc_crc16(crc_data, size))
-        
-        package_len = 8 + size
-        p_overall.contents.len_package = socket.htons(package_len)
+            # Path 정보 설정
+            if len(paths) > 0 and len(paths[0]) > 0:
+                path_len = min(30, len(paths[0]), len(paths[1]))
+                for i in range(path_len):
+                    try:
+                        p_share_info.contents.path_x[i] = float(paths[0][i])
+                        p_share_info.contents.path_y[i] = float(paths[1][i])
+                    except (ValueError, IndexError) as e:
+                        self.logger.warning(f"Error setting path point {i}: {e}")
+                        break
+            
+            # 장애물 정보 설정
+            p_share_info.contents.obstacle_num = socket.htons(len(safe_obstacles))
+            
+            if len(safe_obstacles) > 0:
+                for o, obj in enumerate(safe_obstacles):
+                    try:
+                        obstacle = cast(
+                            addressof(p_share_info.contents) + sizeof(SharingInformation) + (o * sizeof(ObstacleInformation)), 
+                            POINTER(ObstacleInformation)
+                        )
+                        obstacle.contents.cls = int(obj[0])
+                        obstacle.contents.enu_x = float(obj[1])
+                        obstacle.contents.enu_y = float(obj[2])
+                        obstacle.contents.heading = float(obj[3])
+                        obstacle.contents.velocity = float(obj[4])
+                        obstacle.contents.distance = float(obj[5])
+                        obstacle.contents.dangerous = int(obj[6])
+                    except Exception as e:
+                        self.logger.error(f"Error setting obstacle {o}: {e}")
+                        return -1
+            
+            # CRC 계산
+            try:
+                crc16_ptr = cast(addressof(p_dummy.contents) + size, POINTER(c_uint16))
+                crc_bytes = string_at(addressof(p_dummy.contents), size)  # ✅ size만큼 정확히 바이트 추출
+                crc16_ptr.contents.value = socket.htons(calc_crc16(crc_bytes, size))
+            except Exception as e:
+                self.logger.error(f"CRC calculation error: {e}")
+                return -1
+            
+            package_len = 8 + size
+            p_overall.contents.len_package = socket.htons(package_len)
 
-        self.add_ext_status_data(p_overall, package_len)
+            self.add_ext_status_data(p_overall, package_len)
 
-        if self.chip == 'out':
-            self.hdr.contents.len = socket.ntohs(sizeof(V2x_App_Hdr)+6+sizeof(TLVC_Overall_V2)+socket.ntohs(p_overall.contents.len_package))
-        else:
-            self.hdr.contents.len = socket.ntohs(sizeof(V2x_App_Hdr)+6+sizeof(TLVC_Overall)+socket.ntohs(p_overall.contents.len_package))
-        self.hdr.contents.seq = 0
-        self.hdr.contents.payload_id = socket.htons(0x10)
-        self.tx_msg.contents.psid = socket.htonl(EM_V2V_MSG)
-        send_len = socket.ntohs(self.hdr.contents.len) + 6
+            # 헤더 길이 계산
+            if self.chip == 'out':
+                total_len = sizeof(V2x_App_Hdr) + 6 + sizeof(TLVC_Overall_V2) + socket.ntohs(p_overall.contents.len_package)
+            else:
+                total_len = sizeof(V2x_App_Hdr) + 6 + sizeof(TLVC_Overall) + socket.ntohs(p_overall.contents.len_package)
+                
+            self.hdr.contents.len = socket.htons(total_len - 6)  # magic+len 제외
+            self.hdr.contents.seq = 0
+            self.hdr.contents.payload_id = socket.htons(0x10)
+            self.tx_msg.contents.psid = socket.htonl(EM_V2V_MSG)
+            
+            send_len = total_len
+            
+            # 패킷 크기 최종 검증
+            MAX_SAFE_SIZE = 1000  # 안전한 크기로 제한
+            if send_len > MAX_SAFE_SIZE:
+                self.logger.error(f"Packet size {send_len} exceeds safe limit {MAX_SAFE_SIZE}")
+                return -1
+                
+            self.logger.info(f"Final packet size: {send_len} bytes")
 
-        crc16 = pointer(c_uint16.from_buffer(self.tx_buf, send_len - 2))
-        _crc16 = calc_crc16(self.tx_buf[SIZE_MAGIC_NUMBER_OF_HEADER:], send_len-6)
-        crc16.contents.value = socket.htons(_crc16)
-        
-        data = self.tx_buf[:send_len]
-        
-        self.communication_performance['packet_size'] = send_len
-        self.tx_message = self.get_log_datum(state,paths,obstacles)
-        return self.send(data, send_len)
+            # 최종 CRC 계산
+            try:
+                crc16_final = pointer(c_uint16.from_buffer(self.tx_buf, send_len - 2))
+                _crc16 = calc_crc16(self.tx_buf[SIZE_MAGIC_NUMBER_OF_HEADER:], send_len - 6)
+                crc16_final.contents.value = socket.htons(_crc16)
+            except Exception as e:
+                self.logger.error(f"Final CRC calculation error: {e}")
+                return -1
+            
+            data = self.tx_buf[:send_len]
+            
+            self.communication_performance['packet_size'] = send_len
+            self.tx_message = self.get_log_datum(state, paths, safe_obstacles)
+            
+            return self.send(data, send_len)
+            
+        except Exception as e:
+            self.logger.error(f"Unexpected error in tx(): {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            return -1
+
+    # socket_handler.py
+    def send(self, data, send_size):
+        try:
+            # 연결 시 한번만 설정: self.fd.settimeout(2.0)
+            total_sent = 0
+            max_retries = 7
+            backoff = 0.1  # 100ms
+
+            while total_sent < send_size:
+                try:
+                    sent = self.fd.send(data[total_sent:])
+                    if sent == 0:
+                        raise socket.error("Connection broken")
+                    total_sent += sent
+                except (socket.timeout, BlockingIOError, InterruptedError):
+                    if max_retries <= 0:
+                        self.logger.error("Send stalled, dropping this frame gracefully")
+                        return -1
+                    time.sleep(backoff)
+                    max_retries -= 1
+                    backoff = min(backoff * 2, 0.8)  # max 800ms
+                    continue
+
+            if total_sent == send_size:
+                if self.rx_rate > 0:
+                    self.tx_rate += 1
+                self.logger.info(f"Tx cnt:{self.tx_cnt}\n"+self.tx_message)
+                self.logger.debug(f"Sent {send_size} bytes successfully")
+                self.rtt_ts_list.append([self.tx_cnt, time.time()])
+                self.tx_cnt += 1
+                self.update_throughput_metrics(send_size)
+                return 1
+            else:
+                self.logger.error(f"Partial send: {total_sent}/{send_size}")
+                return -1
+
+        except socket.error as e:
+            self.logger.error(f"Socket send error: {e}")
+            return -1
+
 
     def rx(self):
         data = self.receive()
@@ -236,29 +387,17 @@ class SocketHandler:
             return self.communication_performance        
 
     def calc_rate(self, hz):
-        rx_rate = min(100, (float(self.rx_rate)/hz)*100)
+        rx_rate = min(100, (float(self.rx_rate)/self.tx_rate)*100) if self.rx_rate > 0 else 0
         self.communication_performance['packet_rate'] = rx_rate
         if self.rx_rate >= hz:
             self.rx_rate = 1
+        if self.tx_rate >= hz:
+            self.tx_rate = 1
         return 1
 
     def calc_delay(self, rx_timestamp):
         delay = int(time.time()*1000)-rx_timestamp
         self.communication_performance['delay'] = delay
-
-    
-
-    def send(self, data, send_size):
-        try:
-            self.fd.sendall(data)
-            self.logger.info(f"Tx cnt:{self.tx_cnt}\n"+self.tx_message)
-            self.rtt_ts_list.append([self.tx_cnt, time.time()])
-            self.tx_cnt += 1
-            self.update_throughput_metrics(send_size)
-            return 1
-        except socket.error as e:
-            self.logger.error(f"{e}")
-            return -1
     
     
     def receive(self):

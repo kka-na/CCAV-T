@@ -21,7 +21,7 @@ class RosManager:
         self.set_protocol()
         
     def set_values(self):
-        self.Hz = 100
+        self.Hz = 300
         self.rx_res = None
         self.rate = rospy.Rate(self.Hz)
         self.info_received = False
