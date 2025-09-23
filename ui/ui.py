@@ -109,9 +109,9 @@ class MyApp(QMainWindow):
                 self.ui.centralwidget.setStyleSheet("QWidget {background-color: #638dff}")
         self.comm_perform_update(self.RM.communication_performance)
         self.state_update(self.RM.signals)
-        self.velocity_graph.set_speeds(self.RM.ego_velocity, self.RM.target_velocity)
+        self.velocity_graph.set_speeds(self.RM.ego_velocity, self.RM.v2v_target_velocity)
         self.ui.egoVelocity.setText(str(self.RM.ego_velocity)+" km/h")
-        self.ui.targetVelocity.setText(str(self.RM.target_velocity)+" km/h")
+        self.ui.targetVelocity.setText(str(self.RM.v2v_target_velocity)+" km/h")
     
     @pyqtSlot()
     def update_image(self):

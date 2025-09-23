@@ -27,6 +27,30 @@ def find_nearest_idx(pts, pt):
 
     return min_idx
 
+def filtering_by_lanelet_from_list(obj_list):
+        filtered = []
+        for obj in obj_list:
+            obj_pose = [obj[1], obj[2]]
+            row = int(obj_pose[0] // tile_size)
+            col = int(obj_pose[1] // tile_size)
+            min_dist = float('inf')
+            l_id, l_idx = None, None
+            for i in range(-1, 2):
+                for j in range(-1, 2):
+                    selected_tile = tiles.get((row+i, col+j))
+                    if selected_tile is not None:
+                        for id_, data in selected_tile.items():
+                            for idx, pt in enumerate(data['waypoints']):
+                                dist = euc_distance(obj_pose, pt)
+                                if dist < min_dist:
+                                    min_dist = dist
+                                    l_id = id_
+                                    l_idx = data['idx'][idx]
+            if l_id is not None:
+                if min_dist < 1.8:
+                    filtered.append(obj)
+        return filtered
+
 def lanelet_matching(t_pt):
     row = int(t_pt[0] // tile_size)
     col = int(t_pt[1] // tile_size)

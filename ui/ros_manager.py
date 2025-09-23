@@ -120,7 +120,7 @@ class RosManager:
 
         self.ego_pos = [0,0]
         self.ego_velocity = 0
-        self.target_velocity = 0
+        self.v2v_target_velocity = 0
         self.test_case = '시나리오 : '
         self.communication_performance = {
             'comulative_time':0,
@@ -185,7 +185,7 @@ class RosManager:
     
     def target_share_info_cb(self, msg:ShareInfo):
         self.signals['target']  = msg.signal.data
-        self.target_velocity = int(msg.velocity.data*3.6)
+        self.v2v_target_velocity = int(msg.velocity.data*3.6)
     
     def test_case_cb(self, msg:String):
         self.test_case = f"시나리오 : {msg.data}"

@@ -169,7 +169,7 @@ class SocketHandler:
                     self.logger.warning(f"Skipping obstacle {i} due to insufficient fields: {len(obs)}")
                     
             # 안전한 장애물 개수 제한 - 점진적 테스트를 위해 작게 시작
-            MAX_OBSTACLES = min(20, len(valid_obstacles))  # 우선 10개로 제한
+            MAX_OBSTACLES = min(12, len(valid_obstacles))  # 우선 10개로 제한
             safe_obstacles = valid_obstacles[:MAX_OBSTACLES]
             
             self.logger.info(f"Processing {len(safe_obstacles)} obstacles out of {len(obstacles)} input")
@@ -657,7 +657,7 @@ class SocketHandler:
             return 0.0
         
         # Mbps 계산: (bytes * 8 bits/byte) / (time_seconds * 1,000,000)
-        mbps = (window_bytes * 8) / (actual_window_time * 1_000_000)
+        mbps = (window_bytes * 8) / (actual_window_time * 1000000)
         return round(mbps, 3)
 
     def update_throughput_metrics(self, send_size):
@@ -713,7 +713,6 @@ class SocketHandler:
             self.communication_performance2['rx_min_seq'] = 0
             self.communication_performance2['rx_max_seq'] = 0
             self.communication_performance['packet_rate'] = 0.0  # 기존 필드 유지 시
-            print(0.0, 0.0, 0.0, 0, 0, 0)
             return
 
         # 3) 집계
@@ -735,5 +734,3 @@ class SocketHandler:
 
         # 기존 UI에서 packet_rate가 퍼센트 의미면 그대로 매핑
         self.communication_performance['packet_rate'] = round(prr, 2)
-
-        print(prr, pps, span, uniq, mn, mx)

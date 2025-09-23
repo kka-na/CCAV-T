@@ -77,7 +77,7 @@ class MakeData:
         elif self.scenario == 6:
             sc = 'ETrA3'
     
-        sc_name = f'{sc}_{target_vel}'
+        sc_name = f'{sc}'
         
         self.csv_file = os.path.join(log_dir, f"[{timestamp}]{sc_name}.csv")
 
@@ -112,10 +112,8 @@ class MakeData:
         self.state = int(msg.data[0])
         target_velocity = int(msg.data[2]*3.6)
         self.scenario = int(msg.data[3])
-        if self.target_velocity != target_velocity and self.scenario != 0:
+        if self.scenario != 0 and self.csv_initiation == False:
             self.csv_initiation = True
-            self.target_velocity = target_velocity
-
             self.init_csv(target_velocity)
     
     def calc_ttc(self):

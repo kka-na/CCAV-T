@@ -21,7 +21,7 @@ class SharingInfo():
         self.lpp = LocalPathPlanner(self.map, type)
         self.vp = VelocityPlanner(type)
         self.oh = ObstacleHandler(self.lpp.phelper)
-        self.RM = ROSManager(type, test, self.map, self.oh)
+        self.RM = ROSManager(type, test, self.map, self.oh, self.lpp)
         self.set_values()
     
     def set_values(self):

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import rospy
 import math
+import tf
 
 from pyproj import Proj, Transformer
 from threading import Timer
@@ -15,12 +16,13 @@ from std_msgs.msg import Float32MultiArray,Bool, String
 
 
 class ROSManager:
-    def __init__(self, type,test,  map, oh):
+    def __init__(self, type,test,  map, oh, lpp):
         rospy.init_node(f'{type}_share_info')
         self.type = type
         self.test = test
         self.map = map
         self.oh = oh
+        self.lpp = lpp
         self.set_values()
         self.set_protocol()
     
@@ -112,6 +114,7 @@ class ROSManager:
             self.user_input['target_velocity'] = msg.data[2]
             self.user_input['scenario'] = int(msg.data[3])
         else:
+
             self.user_input['state'] = int(msg.data[0])
             self.user_input['target_velocity'] = msg.data[2]
             self.user_input['scenario'] = int(msg.data[3])
@@ -119,7 +122,7 @@ class ROSManager:
     def lidar_cluster_cb(self, msg):
         obstacles = []
         dangerous_id = 99999
-        min_s = 100
+
         for i, obj in enumerate(msg.boxes):
             if int(obj.header.seq) < 3:
                 continue
@@ -128,28 +131,27 @@ class ROSManager:
                 continue
             else:
                 nx, ny = enu
+
+            quaternion = (
+                obj.pose.orientation.x, 
+                obj.pose.orientation.y, 
+                obj.pose.orientation.z, 
+                obj.pose.orientation.w
+            )
+            _, _, heading = tf.transformations.euler_from_quaternion(quaternion)
             
-            heading = self.oh.refine_heading_by_lane([nx, ny])
-            if heading is None:
-                continue
             distance = self.oh.distance(self.car['x'], self.car['y'], nx, ny)
             v_rel = ( obj.value if obj.value != 0 else 0 ) + self.car['v']
 
-            frenet = self.oh.object2frenet(enu)
-            if frenet is None:
-                continue
-            else:
-                s, d = frenet
-            
             obstacles.append([i, nx, ny, heading, v_rel, distance])
-
-            if 0 < s < 100:
-                if s < min_s and -1 < d < 1 :
-                    dangerous_id = i
-                    min_s = s
-                    
+            
+        
+    
+        filtered_obstacles = self.lpp.phelper.filtering_by_lanelet_from_list(obstacles)
+        filtered_obstacles, dangerous_id = self.oh.get_frenets_from_list(filtered_obstacles)
+        
         lidar_obstacles = []
-        for i, obs in enumerate(obstacles):
+        for i, obs in enumerate(filtered_obstacles):
             if obs[0] == dangerous_id:
                 dangerous = 1
                 self.dangerous_obstacle = obs
@@ -187,7 +189,7 @@ class ROSManager:
 
         obstacles.append([0, nx, ny, heading, v_rel, distance])
         if 1 < s < 100:
-            if s < min_s and -1 < d < 1 :
+            if s < min_s and -2 < d < 2 :
                 dangerous_id = 0
                 min_s = s
         
@@ -328,7 +330,7 @@ class ROSManager:
         msg.data = [
             float(self.user_input['state']),
             float(signal_value),
-            self.user_input['target_velocity'],
+            float(self.user_input['target_velocity']),
             float(self.user_input['scenario'])
         ]
         self.user_input['signal'] = signal_value

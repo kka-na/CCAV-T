@@ -16,7 +16,7 @@ class ObstacleHandler:
         self.current_heading = 0.0
 
         self.stopped_vehicle_start_time = None
-        self.emergency_threshold = 0.3  # 3초
+        self.emergency_threshold = 3  # 3초
 
     def update_value(self, car, local_path, lidar_obstacles):
         self.local_pose = [car['x'], car['y']]
@@ -96,7 +96,6 @@ class ObstacleHandler:
             
             closest_index = np.argmin(distances)
             closest_point = centerline[closest_index]
-            tangent = tangents[closest_index]
             normal = normals[closest_index]
             
             vector_to_point = point - closest_point
@@ -111,7 +110,45 @@ class ObstacleHandler:
             return s, d
         else:
             return None
-    
+        
+    def get_frenets_from_list(self, obj_list):
+        if self.local_path is None or len(self.local_path)<1:
+            return [], 99999
+        #obj_list = [{'x':0, 'y':0, 't':0}]
+        centerline = np.array([(point[0], point[1]) for point in self.local_path])
+        if centerline.shape[0] < 2:
+            return [],99999  # Or handle this case accordingly
+        obj_with_frenets = []
+
+        dangerous_id = 99999
+        min_s = 100
+        for obj in obj_list:
+            obj_pose = [obj[1], obj[2]]
+            point = np.array(obj_pose)
+            tangents = np.gradient(centerline, axis=0)
+            tangents = tangents / np.linalg.norm(tangents, axis=1)[:, np.newaxis]
+            normals = np.column_stack([-tangents[:, 1], tangents[:, 0]])
+            distances = np.linalg.norm(centerline - point, axis=1)
+            closest_index = np.argmin(distances)
+            closest_point = centerline[closest_index]
+            normal = normals[closest_index]
+            vector_to_point = point - closest_point
+            d = np.dot(vector_to_point, normal)
+            s = np.sum(np.linalg.norm(np.diff(centerline[:closest_index + 1], axis=0), axis=1))
+            vector_from_start = point - centerline[0]  
+            if np.dot(tangents[0], vector_from_start) < 0:  
+                s = -np.linalg.norm(vector_from_start) 
+            
+            if -40 < s < 200 and -6 < d < 6 :
+                if 0 < s < 100:
+                    if s < min_s and -2 < d < 2 :
+                        dangerous_id = obj[0]
+                        min_s = s
+                obj_with_frenets.append([obj[0],obj[1],obj[2], obj[3], obj[4],obj[5]])
+            
+        return obj_with_frenets, dangerous_id
+
+
     def refine_heading_by_lane(self, obs_pos):
         idnidx = self.phelper.lanelet_matching2(obs_pos)
         if idnidx is not None:
@@ -129,7 +166,9 @@ class ObstacleHandler:
             return heading
         else:
             return None
+        
     
+
     def check_emergency(self, obs):
         # obs[4]가 velocity라고 가정
         if len(obs) < 6:  # obs[5]까지 필요하므로 6개 이상 확인
@@ -138,11 +177,11 @@ class ObstacleHandler:
 
         velocity = obs[4]
         distance = obs[5]
-        stopped_threshold = 1  # 정지 상태로 간주할 속도 임계값
+        stopped_threshold = 3  # 정지 상태로 간주할 속도 임계값
         
         #print(f"[DEBUG] 현재 상태 - velocity: {velocity:.2f}, distance: {distance:.2f}")
         
-        if abs(velocity) < stopped_threshold or distance < 55:
+        if abs(velocity) < stopped_threshold and distance < 60:
             # 차량이 멈춘 상태
             current_time = time.time()  # 또는 rospy.Time.now().to_sec()
             
