@@ -16,7 +16,7 @@ class ObstacleHandler:
         self.current_heading = 0.0
 
         self.stopped_vehicle_start_time = None
-        self.emergency_threshold = 3  # 3초
+        self.emergency_threshold = 1.2  # 3초
 
     def update_value(self, car, local_path, lidar_obstacles):
         self.local_pose = [car['x'], car['y']]
@@ -193,15 +193,9 @@ class ObstacleHandler:
                 # 멈춘 시간 계산
                 stopped_duration = current_time - self.stopped_vehicle_start_time
                 #print(f"[DEBUG] 정지 지속 시간: {stopped_duration:.2f}초 / 임계값: {self.emergency_threshold}초")
-                
                 if stopped_duration >= self.emergency_threshold:
                     #print(f"[DEBUG] 🚨 응급상황 감지! 정지 시간 {stopped_duration:.2f}초 초과")
                     return "emergency"
-        else:
-            # 차량이 움직이고 있으면 타이머 리셋
-            if self.stopped_vehicle_start_time is not None:
-                print(f"[DEBUG] 차량 이동 감지 - 타이머 리셋")
-            self.stopped_vehicle_start_time = None
         
         #print(f"[DEBUG] 정상 상태 반환")
         return "normal"

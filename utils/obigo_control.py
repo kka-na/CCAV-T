@@ -14,7 +14,7 @@ from ccavt.msg import ShareInfo
 from map_config import *
 import paho.mqtt.client as mqtt
 
-MAP = 'Solbat'
+MAP = 'KIAPI'
 class ObigoTest:
     def __init__(self, type):
         self.type = type
@@ -128,7 +128,7 @@ class ObigoTest:
          
 
     def communication_performance_cb(self, msg):
-        state, v2x, rtt, mbps, packet_size, packet_rate, distance = msg.data
+        state, v2x, rtt, mbps, packet_size, packet_rate, distance, delay = msg.data
         #현재 시스템 시작 시간 사용 -> 추후 통신 시간으로 업데이트 예정 
         if distance != 0 and self.start_time is None:
             self.start_time = datetime.now()

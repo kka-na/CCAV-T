@@ -28,6 +28,7 @@ class LocalPathPlanner:
         self.change_state = False
         self.change_id = None
 
+        self.reject_cnt = 0
         self.local_path = None
         self.local_lane_number = 1
         self.prev_lane_number = 1
@@ -93,6 +94,10 @@ class LocalPathPlanner:
             self.temp_signal = self.current_signal
             self.change_state = False
             return 'STRAIGHT'
+        if self.reject_once and self.reject_cnt < 60 : 
+            self.reject_cnt += 1
+            return 'STRAIGHT'
+        
         if not self.change_state:
             if self.temp_signal != self.current_signal and self.current_signal in [1, 2]:
                 self.temp_signal = self.current_signal
