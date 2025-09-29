@@ -80,7 +80,11 @@ class ObigoTest:
         v = msg.velocity.data
 
         # 비상 상황 식별자 추가
-        state = msg.state.data
+        #FIXME: 기존 state로 상황코드(1:좌측 변경, 2:우측변경, 4:수락, 5:거절, 7:비상상황) 을 구분하였으나 코드 업데이트로 signal로 변경. 이 부분이 코드에 반영되지 않아 기존 state값을 받고 있어서 signal ( 비상상황인지) 가 불가하였음. 
+
+        state = msg.signal.data
+
+        
         if state == 7 :
             self.emergency_type = '고장 차량'
         elif self.emergency_type != '정상':
