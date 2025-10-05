@@ -192,12 +192,15 @@ class SocketHandler:
         
             p_share_info = cast(addressof(p_dummy.contents.data), POINTER(SharingInformation))
             
-            # 고정밀 타임스탬프 (마이크로초)
-            timestamp_us = int(time.perf_counter() * 1000000)
+            # 밀리초 단위 Unix 타임스탬프 (통신 및 로그 모두 사용)
+            timestamp_ms = int(time.time() * 1000)
             
             p_share_info.contents.tx_cnt = socket.htonl(self.tx_cnt)
             p_share_info.contents.tx_cnt_from_rx = socket.htonl(self.tx_cnt_from_rx)
-            p_share_info.contents.timestamp = self.htobe64(timestamp_us)
+            p_share_info.contents.timestamp = self.htobe64(timestamp_ms)
+            
+            # 로그용 타임스탬프도 동일하게 저장
+            self.current_tx_timestamp = timestamp_ms
             
             try:
                 p_share_info.contents.state = int(state[0])
@@ -251,7 +254,8 @@ class SocketHandler:
             package_len = 8 + size
             p_overall.contents.len_package = socket.htons(package_len)
 
-            set_time = self.add_ext_status_data(p_overall, package_len)
+            # Status data 추가 (KETI 형식은 status에만 사용)
+            self.add_ext_status_data(p_overall, package_len)
 
             if self.chip == 'out':
                 total_len = sizeof(V2x_App_Hdr) + 6 + sizeof(TLVC_Overall_V2) + socket.ntohs(p_overall.contents.len_package)
@@ -282,7 +286,8 @@ class SocketHandler:
             data = memoryview(self.tx_buf)[:send_len]
             
             self.communication_performance['packet_size'] = send_len
-            self.tx_message = self.get_log_datum(set_time, state, paths, safe_obstacles)
+            # 로그용 메시지 생성 시 실제 통신 타임스탬프 사용
+            self.tx_message = self.get_log_datum(self.current_tx_timestamp, state, paths, safe_obstacles)
             
             return self.send(data, send_len)
             
@@ -433,14 +438,13 @@ class SocketHandler:
 
     def calc_delay(self, rx_timestamp):
         try:
-            rx_ts_us = self.be64toh(rx_timestamp)  # 마이크로초
+            rx_ts_ms = self.be64toh(rx_timestamp)  # 밀리초 Unix timestamp
         except Exception:
-            rx_ts_us = int(rx_timestamp)
+            rx_ts_ms = int(rx_timestamp)
         
-        # 마이크로초 단위로 정확한 delay 계산
-        current_us = int(time.perf_counter() * 1000000)
-        delay_us = current_us - rx_ts_us
-        delay_ms = delay_us / 1000.0
+        # 밀리초 단위로 정확한 delay 계산
+        current_ms = int(time.time() * 1000)
+        delay_ms = current_ms - rx_ts_ms
         
         self.communication_performance['delay'] = round(delay_ms, 2)
         
@@ -566,8 +570,11 @@ class SocketHandler:
         p_status.contents.dev_id = socket.htonl(1)
         p_status.contents.hw_ver = socket.htons(2)
         p_status.contents.sw_ver = socket.htons(3)
-        set_time = self.get_keti_time()
-        p_status.contents.timestamp = self.htobe64(set_time)
+        
+        # Status용 타임스탬프 (KETI 형식)
+        keti_time = self.get_keti_time()
+        p_status.contents.timestamp = self.htobe64(keti_time)
+        
         crc_data = bytearray(p_status.contents)
         if self.chip == 'out':
             p_status.contents.cpu_temp = 50
@@ -575,8 +582,6 @@ class SocketHandler:
             p_status.contents.crc = socket.htons(calc_crc16(crc_data, sizeof(TLVC_STATUS_CommUnit_V2)-2))
         else:
             p_status.contents.crc = socket.htons(calc_crc16(crc_data, sizeof(TLVC_STATUS_CommUnit)-2))
-
-        return set_time
     
     def get_keti_time(self):
         now = datetime.now() + timedelta(hours=9)
@@ -603,19 +608,26 @@ class SocketHandler:
         print()
     
     def get_log_datum(self, time_stamp, vehicle_state, vehicle_path, vehicle_obstacles):
+        # 타임스탬프를 읽기 쉬운 형식으로 변환
+        try:
+            dt = datetime.fromtimestamp(time_stamp / 1000.0)
+            timestamp_str = dt.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        except:
+            timestamp_str = str(time_stamp)
+            
         if len(vehicle_state) > 0:
-            state = f"Shared Message\nts:{time_stamp} state:{vehicle_state[0]} signal:{vehicle_state[1]} lat:{vehicle_state[2]} lng:{vehicle_state[3]} h:{vehicle_state[4]} v:{vehicle_state[5]}\n"
+            state = f"Shared Message\nts:{timestamp_str} state:{vehicle_state[0]} signal:{vehicle_state[1]} lat:{vehicle_state[2]:.3f} lng:{vehicle_state[3]:.3f} h:{vehicle_state[4]:.2f} v:{vehicle_state[5]:.2f}\n"
         else:
             state = "No message to Send\n"
         if vehicle_path != [] and len(vehicle_path[0]) > 1:
-            path = f"path: x={vehicle_path[0][0]} y={vehicle_path[0][1]} ~ x={vehicle_path[-1][0]} y={vehicle_path[-1][1]}\n"
+            path = f"path: x={vehicle_path[0][0]:.3f} y={vehicle_path[0][1]:.3f} ~ x={vehicle_path[-1][0]:.3f} y={vehicle_path[-1][1]:.3f}\n"
         else:
-            path = f"Threre is no path\n"
+            path = f"There is no path\n"
         obstacle_number = f"There are {len(vehicle_obstacles)} obstacles\n"
         obstacles_info = ""
         if len(vehicle_obstacles) > 0:
             for i, obs in enumerate(vehicle_obstacles):
-                obstacles_info += f"[{i}] cls:{obs[0]} enu_x:{obs[1]} enu_y:{obs[2]} h:{obs[3]} v:{obs[4]}\n\n"
+                obstacles_info += f"[{i}] cls:{obs[0]} x:{obs[1]:.2f} y:{obs[2]:.2f} h:{obs[3]:.2f} v:{obs[4]:.2f}\n"
         return state+path+obstacle_number+obstacles_info
 
     def get_performance_log(self):
