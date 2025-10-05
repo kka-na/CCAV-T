@@ -97,6 +97,11 @@ def build_ext_v2v_with_seq(sequence: int) -> bytes:
     payload = struct.pack("!I", PSID_V2V) + payload_inner
     return build_frame(PID_TX, payload)
 
+# test_v2x.py에 추가: 최소 RAW 전송
+def build_v2v_minimal(sequence:int)->bytes:
+    payload = struct.pack("!I", PSID_V2V) + b"PING" + struct.pack("!I", sequence)
+    return build_frame(PID_TX, payload)
+
 
 def hexdump(b: bytes) -> str:
     return " ".join(f"{x:02X}" for x in b)
@@ -217,15 +222,24 @@ def main():
         for fr in frames:
             info = parse_frame(fr)
             print(f"[rx] {info}")
+    # elif args.cmd == "v2vseq":
+    #     for i in range(args.count):
+    #         frame = build_ext_v2v_with_seq(i+1)
+    #         print(f"[tx] V2V SEQ={i+1} len={len(frame)}")
+    #         sock.sendall(frame)
+    #         time.sleep(args.period_ms/1000.0)
+    #     frames = recv_frames(sock, timeout=5.0)
+    # main()의 v2vseq 분기에서 교체 테스트용
     elif args.cmd == "v2vseq":
         for i in range(args.count):
-            frame = build_ext_v2v_with_seq(i+1)
+            # frame = build_ext_v2v_with_seq(i+1)  # 기존(v1 TLVC) 잠시 중지
+            frame = build_v2v_minimal(i+1)         # 최소 RAW로 전송
             print(f"[tx] V2V SEQ={i+1} len={len(frame)}")
             sock.sendall(frame)
             time.sleep(args.period_ms/1000.0)
-        frames = recv_frames(sock, timeout=2.0)
+        frames = recv_frames(sock, timeout=5.0)    # 타임아웃 5초 권장
         if not frames:
-            print("[rx] no frames within 2 s")
+            print("[rx] no frames within 5 s")
         for fr in frames:
             info = parse_frame(fr)
             print(f"[rx] {info}")
