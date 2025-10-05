@@ -21,6 +21,7 @@ class RosManager:
         self.set_protocol()
         
     def set_values(self):
+        #TODO: HZ -> 50 
         self.Hz = 30
         self.rx_res = None
         self.rate = rospy.Rate(self.Hz)
@@ -119,7 +120,7 @@ class RosManager:
         rate = rospy.Rate(1000)
         while not rospy.is_shutdown() and not self.shutdown_event.is_set():
             rx_res = self.v2v_sharing.do_rx()
-            if rx_res == None:
+            if rx_res is None:
                 rospy.logerr("[V2X ROSManager] No Rx Data from Target")
                 rate.sleep()
                 continue
@@ -127,27 +128,19 @@ class RosManager:
                 self.rx_res = rx_res
             rate.sleep()
     
-    def do_calc_rate(self):
-        rate = rospy.Rate(1)
+    def do_publish(self):
+        rate = rospy.Rate(20)
         while not rospy.is_shutdown() and not self.shutdown_event.is_set():
-            calc_rates_res = self.v2v_sharing.do_calc_rate(self.Hz)
-            if calc_rates_res < 0:
+            calc_res = self.v2v_sharing.get_performance()
+            if calc_res is None:
                 rospy.logerr("[V2X ROSManager] Rx Not Working")
                 rate.sleep()
                 continue
-            rate.sleep()
-
-    def do_calc(self):
-        rate = rospy.Rate(10)
-        while not rospy.is_shutdown() and not self.shutdown_event.is_set():
-            calc_res = self.v2v_sharing.do_calc()
-            if calc_res == -1:
-                pass
             else:
                 self.publish(self.rx_res)
                 self.publish_calc(calc_res)
             rate.sleep()
-            
+
 
     def execute(self):
         signal.signal(signal.SIGINT, signal_handler)
@@ -160,25 +153,21 @@ class RosManager:
 
         thread1 = threading.Thread(target=self.do_tx)
         thread2 = threading.Thread(target=self.do_rx)
-        thread3 = threading.Thread(target=self.do_calc)
-        thread4 = threading.Thread(target=self.do_calc_rate)
+        thread4 = threading.Thread(target=self.do_publish)
 
         thread1.start()
         thread2.start()
-        thread3.start()
         thread4.start()
 
         try:
             thread1.join()
             thread2.join()
-            thread3.join()
             thread4.join()
         
         except KeyboardInterrupt:
             self.shutdown_event.set()
             thread1.join()
             thread2.join()
-            thread3.join()
             thread4.join()       
         
         return sharing_state

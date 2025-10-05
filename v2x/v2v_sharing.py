@@ -29,8 +29,5 @@ class V2VSharing:
     def do_rx(self):
         return self.socket_handler.rx()
 
-    def do_calc(self):
-        return self.socket_handler.calc_comm()
-
-    def do_calc_rate(self, Hz):
-        return self.socket_handler.calc_rate(Hz)
+    def get_performance(self):
+        return self.socket_handler.get_communication_performance()
