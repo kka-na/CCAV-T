@@ -1,0 +1,16 @@
+# 1) 서비스 등록(ADD) 확인
+sudo python3 test_v2x.py 192.168.1.124 --iface enp4s0 wsr --add
+# 기대: [rx] {'type': 'WSC', 'psid': 58200, 'action_result': 0}
+
+# 2) 시퀀스 포함 V2V 송신 후 수신 대기
+sudo python3 test_v2x.py 192.168.1.124 --iface enp4s0 v2vseq --count 10 --period_ms 100
+# 기대: 상대 OBU가 무선으로 받은 후 PC-A로 내려주면 [rx] {'type':'RX','psid':58200,...}
+
+
+# 1) 서비스 등록(ADD) 확인
+sudo python3 test_v2x.py 192.168.1.125 --iface enp4s0 wsr --add
+# 기대: [rx] WSC
+
+# 2) 시퀀스 포함 V2V 송신 후 수신 대기
+sudo python3 test_v2x.py 192.168.1.125 --iface enp4s0 v2vseq --count 10 --period_ms 100
+# 기대: [rx] RX

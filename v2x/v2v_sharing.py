@@ -5,7 +5,7 @@ class V2VSharing:
     def __init__(self, type, interface, chip):
         self.socket_handler = SocketHandler(type, interface, chip)
         if chip == 'out':
-            self.IP = '192.168.1.59' if type == 'ego' else '192.168.1.60'
+            self.IP = '192.168.1.124' if type == 'ego' else '192.168.1.125'
     
     def set_obu(self):
         if self.socket_handler.connect(self.IP) < 0:
