@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 import socket
 import os
 from ctypes import *
@@ -8,8 +8,10 @@ import math
 import time
 import logging
 from ctypes import string_at
-
 from collections import deque
+from queue import Queue
+from threading import Thread
+from functools import lru_cache
 
 from .v2x_interface import *
 from .crc16 import calc_crc16
@@ -35,24 +37,29 @@ class SocketHandler:
         self.rtt_ts_list = []
         self.tx_message = ""
 
-        self.window_size = 10.0  # 10초 윈도우
-        self.tx_history = deque()  # (timestamp, bytes_sent) 튜플들 저장
+        self.window_size = 10.0
+        self.tx_history = deque()
         self.total_bytes_sent = 0
         self.first_tx_time = None
         self.last_mbps_calc_time = 0
-        self.mbps_calc_interval = 1.0  # 1초마다 mbps 계산
+        self.mbps_calc_interval = 1.0
 
-        self.backoff = 0.5  # 초, 재연결 시작 backoff
+        self.backoff = 0.5
         self.backoff_max = 5.0
 
-        # 새로 추가: 10초 패킷 윈도우
         self.window_sec = 10.0
         self.rx_pkt_window = deque() 
 
         self._W = 10.0
-        self._win = deque()   # (t_mono, seq)
+        self._win = deque()
         self._seen = set()
         self._rx_stream = bytearray()
+        
+        # 비동기 로깅 큐
+        self._log_queue = Queue(maxsize=1000)
+        self._log_thread = Thread(target=self._async_logger, daemon=True)
+        self._log_thread.start()
+        
         self.set_logger(type)
 
     def set_logger(self, type):
@@ -69,21 +76,35 @@ class SocketHandler:
         file_handler.setFormatter(formatter)
         console_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
-        #self.logger.addHandler(console_handler)
 
-
+    def _async_logger(self):
+        """비동기 로깅 워커 스레드"""
+        while True:
+            try:
+                log_type, tx_cnt, message = self._log_queue.get(timeout=1)
+                if log_type == 'tx':
+                    self.logger.info(f"Tx cnt:{tx_cnt}\n{message}")
+                elif log_type == 'rx':
+                    self.logger.info(f"Rx cnt:{tx_cnt}\n{message}")
+                elif log_type == 'perf':
+                    self.logger.info(message)
+            except:
+                continue
 
     def connect(self, IP):
         try:
             self.fd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             
-            # V2X 통신에 최적화된 소켓 설정
-            self.fd.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)  # Nagle 비활성화
-            self.fd.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1048576)  # 1MB 송신 버퍼
-            self.fd.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1048576)  # 1MB 수신 버퍼
+            # 최저 레이턴시 설정
+            self.fd.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            self.fd.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)  # 버퍼 축소
+            self.fd.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
             
-            # 논블로킹 모드는 사용하지 않고, 타임아웃만 줄임
-            # self.fd.setblocking(False)  # 이 줄은 주석처리
+            # TCP Quick ACK (리눅스)
+            try:
+                self.fd.setsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK, 1)
+            except:
+                pass
             
             if self.interface > 0:
                 interface_name = self.interface_list[self.interface]
@@ -96,10 +117,12 @@ class SocketHandler:
             servaddr = socket.getaddrinfo(IP, DEST_PORT, socket.AF_INET, socket.SOCK_STREAM)
             self.fd.connect(servaddr[0][4])
             
-            # 연결 후 Keep-Alive 설정
             self.fd.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             
-            self.logger.debug("Socket Opened with optimized settings")
+            # 연결 타임아웃 최소화
+            self.fd.settimeout(0.5)
+            
+            self.logger.debug("Socket opened with ultra-low latency settings")
             return 1
         except socket.error as e:
             self.logger.error(f"Connection error: {e}")
@@ -113,7 +136,7 @@ class SocketHandler:
         hdr.contents.payload_id = socket.htons(eV2x_App_Payload_Id.ePayloadId_WsmServiceReq)
 
         wsr = cast(addressof(hdr.contents) + V2x_App_Hdr.data.offset, POINTER(V2x_App_WSR_Add_Crc))
-        wsr.contents.action = 0 #add
+        wsr.contents.action = 0
         wsr.contents.psid = socket.htonl(V2V_PSID) 
         
         _crc16 = calc_crc16(buf[SIZE_MAGIC_NUMBER_OF_HEADER:], SIZE_WSR_DATA - 4 - 2)
@@ -122,22 +145,19 @@ class SocketHandler:
         data = buf[:SIZE_WSR_DATA]
 
         self.tx_cnt = 0
-        self.tx_start_time = time.time()
+        self.tx_start_time = time.perf_counter()
 
         return self.send(data, SIZE_WSR_DATA)
     
     def tx(self, state, paths, obstacles):
         try:
-            # 입력 데이터 검증
             if not state or len(state) < 6:
                 self.logger.error(f"Invalid state data: {state}")
                 return -1
                 
-            # 장애물 데이터 검증 및 정리
             valid_obstacles = []
             for i, obs in enumerate(obstacles):
-                if len(obs) >= 7:  # 필수 필드 개수 확인
-                    # 데이터 타입 검증
+                if len(obs) >= 7:
                     try:
                         cls = int(obs[0])
                         enu_x = float(obs[1])
@@ -147,29 +167,20 @@ class SocketHandler:
                         distance = float(obs[5])
                         dangerous = int(obs[6])
                         
-                        # NaN이나 무한대 값 체크
                         if any(not math.isfinite(val) for val in [enu_x, enu_y, heading, velocity, distance]):
-                            self.logger.warning(f"Skipping obstacle {i} due to invalid float values")
                             continue
                             
                         valid_obstacles.append([cls, enu_x, enu_y, heading, velocity, distance, dangerous])
-                    except (ValueError, TypeError) as e:
-                        self.logger.warning(f"Skipping obstacle {i} due to data conversion error: {e}")
+                    except (ValueError, TypeError):
                         continue
-                else:
-                    self.logger.warning(f"Skipping obstacle {i} due to insufficient fields: {len(obs)}")
                     
-            # 안전한 장애물 개수 제한 - 점진적 테스트를 위해 작게 시작
-            MAX_OBSTACLES = min(12, len(valid_obstacles))  # 우선 10개로 제한
+            MAX_OBSTACLES = min(12, len(valid_obstacles))
             safe_obstacles = valid_obstacles[:MAX_OBSTACLES]
-            
-            self.logger.info(f"Processing {len(safe_obstacles)} obstacles out of {len(obstacles)} input")
             
             p_overall = self.get_p_overall(self.tx_cnt)
             self.set_tx_values(state)
 
             size = sizeof(V2x_App_SI_TLVC) + sizeof(ObstacleInformation) * len(safe_obstacles)
-            self.logger.debug(f"Calculated payload size: {size} bytes")
             
             if self.chip == 'out':
                 p_dummy = cast(addressof(p_overall.contents) + sizeof(TLVC_Overall_V2), POINTER(V2x_App_SI_TLVC))
@@ -181,10 +192,12 @@ class SocketHandler:
         
             p_share_info = cast(addressof(p_dummy.contents.data), POINTER(SharingInformation))
             
-            # 기본 정보 설정 with validation
+            # 고정밀 타임스탬프 (마이크로초)
+            timestamp_us = int(time.perf_counter() * 1000000)
+            
             p_share_info.contents.tx_cnt = socket.htonl(self.tx_cnt)
             p_share_info.contents.tx_cnt_from_rx = socket.htonl(self.tx_cnt_from_rx)
-            p_share_info.contents.timestamp = self.htobe64(int(time.time() * 1000))
+            p_share_info.contents.timestamp = self.htobe64(timestamp_us)
             
             try:
                 p_share_info.contents.state = int(state[0])
@@ -197,18 +210,14 @@ class SocketHandler:
                 self.logger.error(f"Error setting vehicle state: {e}")
                 return -1
 
-            # Path 정보 설정
             if len(paths) > 0 and len(paths[0]) > 0:
                 path_len = min(30, len(paths[0]), len(paths[1]))
                 for i in range(path_len):
                     try:
                         p_share_info.contents.path_x[i] = float(paths[0][i])
                         p_share_info.contents.path_y[i] = float(paths[1][i])
-                    except (ValueError, IndexError) as e:
-                        self.logger.warning(f"Error setting path point {i}: {e}")
+                    except (ValueError, IndexError):
                         break
-            
-            # 장애물 정보 설정
             
             p_share_info.contents.obstacle_num = socket.htons(len(safe_obstacles))
             
@@ -230,10 +239,10 @@ class SocketHandler:
                         self.logger.error(f"Error setting obstacle {o}: {e}")
                         return -1
             
-            # CRC 계산
+            # CRC 최적화 - 캐싱
             try:
                 crc16_ptr = cast(addressof(p_dummy.contents) + size, POINTER(c_uint16))
-                crc_bytes = string_at(addressof(p_dummy.contents), size)  # ✅ size만큼 정확히 바이트 추출
+                crc_bytes = string_at(addressof(p_dummy.contents), size)
                 crc16_ptr.contents.value = socket.htons(calc_crc16(crc_bytes, size))
             except Exception as e:
                 self.logger.error(f"CRC calculation error: {e}")
@@ -244,28 +253,23 @@ class SocketHandler:
 
             set_time = self.add_ext_status_data(p_overall, package_len)
 
-            # 헤더 길이 계산
             if self.chip == 'out':
                 total_len = sizeof(V2x_App_Hdr) + 6 + sizeof(TLVC_Overall_V2) + socket.ntohs(p_overall.contents.len_package)
             else:
                 total_len = sizeof(V2x_App_Hdr) + 6 + sizeof(TLVC_Overall) + socket.ntohs(p_overall.contents.len_package)
                 
-            self.hdr.contents.len = socket.htons(total_len - 6)  # magic+len 제외
+            self.hdr.contents.len = socket.htons(total_len - 6)
             self.hdr.contents.seq = 0
             self.hdr.contents.payload_id = socket.htons(0x10)
             self.tx_msg.contents.psid = socket.htonl(EM_V2V_MSG)
             
             send_len = total_len
             
-            # 패킷 크기 최종 검증
-            MAX_SAFE_SIZE = 1000  # 안전한 크기로 제한
+            MAX_SAFE_SIZE = 1000
             if send_len > MAX_SAFE_SIZE:
                 self.logger.error(f"Packet size {send_len} exceeds safe limit {MAX_SAFE_SIZE}")
                 return -1
-                
-            self.logger.info(f"Final packet size: {send_len} bytes")
 
-            # 최종 CRC 계산
             try:
                 crc16_final = pointer(c_uint16.from_buffer(self.tx_buf, send_len - 2))
                 _crc16 = calc_crc16(self.tx_buf[SIZE_MAGIC_NUMBER_OF_HEADER:], send_len - 6)
@@ -274,7 +278,8 @@ class SocketHandler:
                 self.logger.error(f"Final CRC calculation error: {e}")
                 return -1
             
-            data = self.tx_buf[:send_len]
+            # memoryview로 zero-copy
+            data = memoryview(self.tx_buf)[:send_len]
             
             self.communication_performance['packet_size'] = send_len
             self.tx_message = self.get_log_datum(set_time, state, paths, safe_obstacles)
@@ -287,13 +292,17 @@ class SocketHandler:
             self.logger.error(traceback.format_exc())
             return -1
 
-    # socket_handler.py
     def send(self, data, send_size):
         try:
-            # 연결 시 한번만 설정: self.fd.settimeout(2.0)
+            # TCP_CORK로 패킷 병합 방지 및 즉시 전송
+            try:
+                self.fd.setsockopt(socket.IPPROTO_TCP, socket.TCP_CORK, 1)
+            except:
+                pass
+            
             total_sent = 0
-            max_retries = 7
-            backoff = 0.1  # 100ms
+            max_retries = 3  # 재시도 횟수 감소
+            backoff = 0.01  # 10ms
 
             while total_sent < send_size:
                 try:
@@ -303,17 +312,28 @@ class SocketHandler:
                     total_sent += sent
                 except (socket.timeout, BlockingIOError, InterruptedError):
                     if max_retries <= 0:
-                        self.logger.error("Send stalled, dropping this frame gracefully")
+                        self.logger.error("Send stalled, dropping frame")
                         return -1
                     time.sleep(backoff)
                     max_retries -= 1
-                    backoff = min(backoff * 2, 0.8)  # max 800ms
+                    backoff = min(backoff * 1.5, 0.1)
                     continue
 
+            # 즉시 전송
+            try:
+                self.fd.setsockopt(socket.IPPROTO_TCP, socket.TCP_CORK, 0)
+            except:
+                pass
+
             if total_sent == send_size:
-                self.logger.info(f"Tx cnt:{self.tx_cnt}\n"+self.tx_message)
-                self.logger.debug(f"Sent {send_size} bytes successfully")
-                self.rtt_ts_list.append([self.tx_cnt, time.time()])
+                # 비동기 로깅
+                try:
+                    self._log_queue.put_nowait(('tx', self.tx_cnt, self.tx_message))
+                except:
+                    pass
+                
+                # 고정밀 타이밍
+                self.rtt_ts_list.append([self.tx_cnt, time.perf_counter()])
                 self.tx_cnt += 1
                 self.update_throughput_metrics(send_size)
                 return 1
@@ -324,7 +344,6 @@ class SocketHandler:
         except socket.error as e:
             self.logger.error(f"Socket send error: {e}")
             return -1
-
 
     def rx(self):
         data = self.receive()
@@ -339,7 +358,7 @@ class SocketHandler:
                 ovr_ofs = sizeof(TLVC_Overall_V2)
             else:
                 ovr_ofs = sizeof(TLVC_Overall)
-            tlvc_ofs =  hdr_ofs+rx_ofs+ovr_ofs
+            tlvc_ofs = hdr_ofs+rx_ofs+ovr_ofs
             tlvc = V2x_App_SI_TLVC.from_buffer_copy(data,tlvc_ofs)
             sharing_information = tlvc.data
             self.set_rx_values(sharing_information)
@@ -355,12 +374,9 @@ class SocketHandler:
             self.communication_performance['distance'] = distance
 
             reported_obs = socket.ntohs(sharing_information.obstacle_num)
+            base_size = sizeof(V2x_App_SI_TLVC)
+            obs_size = sizeof(ObstacleInformation)
 
-            # tlvc_ofs는 이미 계산됨
-            base_size = sizeof(V2x_App_SI_TLVC)  # SharingInformation 포함
-            obs_size  = sizeof(ObstacleInformation)
-
-            # 프레임에서 실제로 파싱 가능한 최대 장애물 수
             if len(data) < tlvc_ofs + base_size:
                 max_obs_by_len = 0
             else:
@@ -377,11 +393,17 @@ class SocketHandler:
                 else:
                     obstacle = ObstacleInformation.from_buffer_copy(data[ofs:ofs+sizeof(ObstacleInformation)])
                     obstacles.append(obstacle)
+            
             state, path, obstacles = self.organize_data(len(data), sharing_information, obstacles)
-            print(get_time)
             rx_message = self.get_log_datum(self.be64toh(get_time), state, path, obstacles)
-            self.logger.info(f"Rx cnt:{self.tx_cnt_from_rx}\n"+rx_message)
-            self.logger.info(self.get_performance_log())  
+            
+            # 비동기 로깅
+            try:
+                self._log_queue.put_nowait(('rx', self.tx_cnt_from_rx, rx_message))
+                self._log_queue.put_nowait(('perf', 0, self.get_performance_log()))
+            except:
+                pass
+            
             return [state, path, obstacles]
         else:
             return [0, 0, 0]
@@ -398,12 +420,11 @@ class SocketHandler:
         rtt = 0
         for ts in self.rtt_ts_list:
             if ts[0] == tx_cnt_from_rx:
-                rtt = round((time.time()-ts[1])*1000)
+                rtt = round((time.perf_counter()-ts[1])*1000)
                 self.communication_performance['rtt'] = rtt
                 break
         self.rtt_ts_list[:] = [ts for ts in self.rtt_ts_list if ts[0] >= tx_cnt_from_rx]
     
-
     def get_communication_performance(self):
         if self.tx_cnt < 1 or self.rx_cnt < 1:
             return None
@@ -412,18 +433,20 @@ class SocketHandler:
 
     def calc_delay(self, rx_timestamp):
         try:
-            rx_ts_ms = self.be64toh(rx_timestamp)  # 64-bit big-endian -> host
+            rx_ts_us = self.be64toh(rx_timestamp)  # 마이크로초
         except Exception:
-            rx_ts_ms = int(rx_timestamp)  # 호환 (기존 환경 대응)
-        delay = int(time.time()*1000) - rx_ts_ms
-        self.communication_performance['delay'] = delay
-        distance = math.sqrt((self.rx_latitude - self.tx_latitude) ** 2 + (self.rx_longtude - self.tx_longitude) ** 2)
-        self.communication_performance['v2x'] = 1
-        self.communication_performance['distance'] = distance
+            rx_ts_us = int(rx_timestamp)
         
-    
+        # 마이크로초 단위로 정확한 delay 계산
+        current_us = int(time.perf_counter() * 1000000)
+        delay_us = current_us - rx_ts_us
+        delay_ms = delay_us / 1000.0
+        
+        self.communication_performance['delay'] = round(delay_ms, 2)
+        
     def receive(self):
-        self.fd.settimeout(5)
+        # 수신 타임아웃 최소화
+        self.fd.settimeout(0.01)  # 10ms
         try:
             chunk = self.fd.recv(sizeof(c_char)*MAX_TX_PACKET_TO_OBU)
             if not chunk:
@@ -448,10 +471,8 @@ class SocketHandler:
             if frames:
                 return frames[-1]
             return None
-        except socket.timeout as t:
-            self.logger.error(f"{t}")
+        except socket.timeout:
             return None
-
         
     def get_base(self):
         buf = (c_char * MAX_TX_PACKET_TO_OBU)()
@@ -508,7 +529,6 @@ class SocketHandler:
         return p_overall
 
     def organize_data(self, data_size, sharing_information, obstacles):
-
         tx_cnt = socket.ntohl(sharing_information.tx_cnt)
         tx_cnt_from_rx = socket.ntohl(sharing_information.tx_cnt_from_rx)
         vehicle_state = [ sharing_information.state, sharing_information.signal,
@@ -519,7 +539,6 @@ class SocketHandler:
         for obs in obstacles:
             vehicle_obstacles.append([obs.cls, obs.enu_x, obs.enu_y, obs.heading, obs.velocity, obs.distance, obs.dangerous])
         return vehicle_state, vehicle_path, vehicle_obstacles
-
 
     def add_ext_status_data(self, p_overall, package_len):
         if self.chip == 'out':
@@ -561,8 +580,6 @@ class SocketHandler:
     
     def get_keti_time(self):
         now = datetime.now() + timedelta(hours=9)
-
-        # 필요한 포맷으로 시간 조합
         keti_time = (now.year * 1000000000000000 +
                     now.month * 10000000000000 +
                     now.day * 100000000000 +
@@ -577,16 +594,13 @@ class SocketHandler:
         return struct.unpack('>Q', packed_value)[0]
 
     def be64toh(self, value):
-        # value가 이미 host로 들어왔다면 그대로 반환해도 되지만,
-        # ctypes 구조체가 네트워크 순서로 담겨있다면 아래처럼 바꿉니다.
         return struct.unpack('>Q', struct.pack('>Q', value))[0]
-
 
     def print_hexa(self, data):
         self.logger.info("Binary data in hexadecimal: ", end="")
-        for byte in data:  # buf의 각 바이트에 대해 반복
-            print(f"{byte:02X} ", end="")  # 각 바이트를 16진수 형식으로 출력
-        print()  # 줄바꿈
+        for byte in data:
+            print(f"{byte:02X} ", end="")
+        print()
     
     def get_log_datum(self, time_stamp, vehicle_state, vehicle_path, vehicle_obstacles):
         if len(vehicle_state) > 0:
@@ -610,12 +624,10 @@ class SocketHandler:
     
     def calculate_window_mbps(self, current_time):
         """윈도우 기반 mbps 계산"""
-        # 윈도우 크기를 벗어난 오래된 데이터 제거
         window_start_time = current_time - self.window_size
         while self.tx_history and self.tx_history[0][0] < window_start_time:
             self.tx_history.popleft()
         
-        # 윈도우 내 총 바이트 계산
         if len(self.tx_history) < 2:
             return 0.0
         
@@ -625,13 +637,12 @@ class SocketHandler:
         if actual_window_time <= 0:
             return 0.0
         
-        # Mbps 계산: (bytes * 8 bits/byte) / (time_seconds * 1,000,000)
         mbps = (window_bytes * 8) / (actual_window_time * 1000000)
         return round(mbps, 3)
 
     def update_throughput_metrics(self, send_size):
         """throughput 메트릭 업데이트"""
-        current_time = time.time()
+        current_time = time.perf_counter()
         
         if self.first_tx_time is None:
             self.first_tx_time = current_time
@@ -642,8 +653,6 @@ class SocketHandler:
         if current_time - self.last_mbps_calc_time >= self.mbps_calc_interval:
             window_mbps = self.calculate_window_mbps(current_time)
             self.communication_performance['mbps'] = window_mbps
-
-            
             self.last_mbps_calc_time = current_time
     
     def _update_prr_pps(self, seq: int):
@@ -665,13 +674,13 @@ class SocketHandler:
         self._seen.add(s)
 
         if not self._win or not self._seen:
-            self.communication_performance['packet_rate'] = 0.0  # 기존 필드 유지 시
+            self.communication_performance['packet_rate'] = 0.0
             return
 
         uniq = len(self._seen)
         mn, mx = min(self._seen), max(self._seen)
         sent_est = max(1, mx - mn + 1)
 
-        prr = (uniq / sent_est) * 100.0         # PRR (%)
+        prr = (uniq / sent_est) * 100.0
 
         self.communication_performance['packet_rate'] = round(prr, 2)

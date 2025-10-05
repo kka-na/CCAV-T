@@ -22,7 +22,7 @@ class RosManager:
         
     def set_values(self):
         #TODO: HZ -> 50 
-        self.Hz = 30
+        self.Hz = 300
         self.rx_res = None
         self.rate = rospy.Rate(self.Hz)
         self.info_received = False
