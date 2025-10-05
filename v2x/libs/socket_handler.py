@@ -436,7 +436,10 @@ class SocketHandler:
         #     self.rx_rate = 1
         # if self.tx_rate >= hz:
         #     self.tx_rate = 1
-        return 1
+        if self.tx_cnt < 1 or self.rx_cnt < 1:
+            return -1
+        else:
+            return self.communication_performance
 
     def calc_delay(self, rx_timestamp):
         try:
@@ -445,6 +448,9 @@ class SocketHandler:
             rx_ts_ms = int(rx_timestamp)  # 호환 (기존 환경 대응)
         delay = int(time.time()*1000) - rx_ts_ms
         self.communication_performance['delay'] = delay
+        distance = math.sqrt((self.rx_latitude - self.tx_latitude) ** 2 + (self.rx_longtude - self.tx_longitude) ** 2)
+        self.communication_performance['v2x'] = 1
+        self.communication_performance['distance'] = distance
         
     
     def receive(self):

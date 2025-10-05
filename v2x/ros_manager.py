@@ -21,7 +21,7 @@ class RosManager:
         self.set_protocol()
         
     def set_values(self):
-        self.Hz = 30
+        self.Hz = 100
         self.rx_res = None
         self.rate = rospy.Rate(self.Hz)
         self.info_received = False
@@ -126,28 +126,26 @@ class RosManager:
             else:
                 self.rx_res = rx_res
             rate.sleep()
-    
+
+    def do_calc(self):
+        while not rospy.is_shutdown() and not self.shutdown_event.is_set():
+            calc_res = self.v2v_sharing.do_calc()
+            if calc_res == -1:
+                pass
+            self.rate.sleep()
+        
     def do_calc_rate(self):
-        rate = rospy.Rate(1)
+        rate = rospy.Rate(20)
         while not rospy.is_shutdown() and not self.shutdown_event.is_set():
             calc_rates_res = self.v2v_sharing.do_calc_rate(self.Hz)
             if calc_rates_res < 0:
                 rospy.logerr("[V2X ROSManager] Rx Not Working")
                 rate.sleep()
                 continue
-            rate.sleep()
-
-    def do_calc(self):
-        rate = rospy.Rate(10)
-        while not rospy.is_shutdown() and not self.shutdown_event.is_set():
-            calc_res = self.v2v_sharing.do_calc()
-            if calc_res == -1:
-                pass
             else:
                 self.publish(self.rx_res)
-                self.publish_calc(calc_res)
+                self.publish_calc(calc_rates_res)
             rate.sleep()
-            
 
     def execute(self):
         signal.signal(signal.SIGINT, signal_handler)
