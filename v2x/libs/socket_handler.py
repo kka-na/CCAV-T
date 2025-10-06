@@ -350,15 +350,81 @@ class SocketHandler:
             self.logger.error(f"Socket send error: {e}")
             return -1
 
+    # def rx(self):
+    #     data_list = self.receive()
+    #     if data_list is None:
+    #         return [0,0,0]
+    #     latest_result = [0,0,0]
+    #     for data in data_list:
+    #         if len(data) > SIZE_WSR_DATA:
+    #             self.rx_cnt += 1
+    #             self.rx_rate += 1
+    #             hdr_ofs = V2x_App_Hdr.data.offset
+    #             rx_ofs = V2x_App_RxMsg.data.offset
+    #             if self.chip == 'out':
+    #                 ovr_ofs = sizeof(TLVC_Overall_V2)
+    #             else:
+    #                 ovr_ofs = sizeof(TLVC_Overall)
+    #             tlvc_ofs = hdr_ofs+rx_ofs+ovr_ofs
+    #             tlvc = V2x_App_SI_TLVC.from_buffer_copy(data,tlvc_ofs)
+    #             sharing_information = tlvc.data
+    #             self.set_rx_values(sharing_information)
+    #             self.tx_cnt_from_rx = socket.ntohl(sharing_information.tx_cnt)
+
+    #             self._update_prr_pps(self.tx_cnt_from_rx)
+
+    #             self.calc_rtt(socket.ntohl(sharing_information.tx_cnt_from_rx))
+    #             get_time = sharing_information.timestamp
+    #             self.calc_delay(get_time)
+    #             distance = math.sqrt((self.rx_latitude - self.tx_latitude) ** 2 + (self.rx_longtude - self.tx_longitude) ** 2)
+    #             self.communication_performance['v2x'] = 1
+    #             self.communication_performance['distance'] = distance
+
+    #             reported_obs = socket.ntohs(sharing_information.obstacle_num)
+    #             base_size = sizeof(V2x_App_SI_TLVC)
+    #             obs_size = sizeof(ObstacleInformation)
+
+    #             if len(data) < tlvc_ofs + base_size:
+    #                 max_obs_by_len = 0
+    #             else:
+    #                 payload_room = len(data) - (tlvc_ofs + base_size)
+    #                 max_obs_by_len = max(0, payload_room // obs_size)
+
+    #             obs_count = min(reported_obs, max_obs_by_len)
+
+    #             obstacles = []
+    #             for i in range(obs_count):
+    #                 ofs = tlvc_ofs+sizeof(V2x_App_SI_TLVC)+(i*sizeof(ObstacleInformation))
+    #                 if len(data) < ofs + sizeof(ObstacleInformation):
+    #                     pass
+    #                 else:
+    #                     obstacle = ObstacleInformation.from_buffer_copy(data[ofs:ofs+sizeof(ObstacleInformation)])
+    #                     obstacles.append(obstacle)
+                
+    #             state, path, obstacles = self.organize_data(len(data), sharing_information, obstacles)
+    #             rx_message = self.get_log_datum(self.be64toh(get_time), state, path, obstacles)
+                
+    #             # 비동기 로깅
+    #             try:
+    #                 self._log_queue.put_nowait(('rx', self.tx_cnt_from_rx, rx_message))
+    #                 self._log_queue.put_nowait(('perf', 0, self.get_performance_log()))
+    #             except:
+    #                 pass
+                
+    #             latest_result = [state, path, obstacles]
+
+    #     return latest_result
+
     def rx(self):
         data_list = self.receive()
         if data_list is None:
             return [0,0,0]
-        latest_result = [0,0,0]
+        
+        # 파싱된 프레임들을 저장할 리스트
+        parsed_frames = []
+        
         for data in data_list:
             if len(data) > SIZE_WSR_DATA:
-                self.rx_cnt += 1
-                self.rx_rate += 1
                 hdr_ofs = V2x_App_Hdr.data.offset
                 rx_ofs = V2x_App_RxMsg.data.offset
                 if self.chip == 'out':
@@ -366,56 +432,79 @@ class SocketHandler:
                 else:
                     ovr_ofs = sizeof(TLVC_Overall)
                 tlvc_ofs = hdr_ofs+rx_ofs+ovr_ofs
-                tlvc = V2x_App_SI_TLVC.from_buffer_copy(data,tlvc_ofs)
-                sharing_information = tlvc.data
-                self.set_rx_values(sharing_information)
-                self.tx_cnt_from_rx = socket.ntohl(sharing_information.tx_cnt)
-
-                self._update_prr_pps(self.tx_cnt_from_rx)
-
-                self.calc_rtt(socket.ntohl(sharing_information.tx_cnt_from_rx))
-                get_time = sharing_information.timestamp
-                self.calc_delay(get_time)
-                distance = math.sqrt((self.rx_latitude - self.tx_latitude) ** 2 + (self.rx_longtude - self.tx_longitude) ** 2)
-                self.communication_performance['v2x'] = 1
-                self.communication_performance['distance'] = distance
-
-                reported_obs = socket.ntohs(sharing_information.obstacle_num)
-                base_size = sizeof(V2x_App_SI_TLVC)
-                obs_size = sizeof(ObstacleInformation)
-
-                if len(data) < tlvc_ofs + base_size:
-                    max_obs_by_len = 0
-                else:
-                    payload_room = len(data) - (tlvc_ofs + base_size)
-                    max_obs_by_len = max(0, payload_room // obs_size)
-
-                obs_count = min(reported_obs, max_obs_by_len)
-
-                obstacles = []
-                for i in range(obs_count):
-                    ofs = tlvc_ofs+sizeof(V2x_App_SI_TLVC)+(i*sizeof(ObstacleInformation))
-                    if len(data) < ofs + sizeof(ObstacleInformation):
-                        pass
-                    else:
-                        obstacle = ObstacleInformation.from_buffer_copy(data[ofs:ofs+sizeof(ObstacleInformation)])
-                        obstacles.append(obstacle)
                 
-                state, path, obstacles = self.organize_data(len(data), sharing_information, obstacles)
-                rx_message = self.get_log_datum(self.be64toh(get_time), state, path, obstacles)
-                
-                # 비동기 로깅
                 try:
-                    self._log_queue.put_nowait(('rx', self.tx_cnt_from_rx, rx_message))
-                    self._log_queue.put_nowait(('perf', 0, self.get_performance_log()))
-                except:
-                    pass
-                
-                latest_result = [state, path, obstacles]
-
-            return latest_result
-        else:
-            return [0, 0, 0]
+                    tlvc = V2x_App_SI_TLVC.from_buffer_copy(data, tlvc_ofs)
+                    sharing_information = tlvc.data
+                    tx_cnt_from_rx = socket.ntohl(sharing_information.tx_cnt)
+                    
+                    # 시퀀스 번호와 함께 저장
+                    parsed_frames.append((tx_cnt_from_rx, data, tlvc_ofs, sharing_information))
+                except Exception as e:
+                    self.logger.error(f"Frame parsing error: {e}")
+                    continue
+        
+        if not parsed_frames:
+            return [0,0,0]
+        
+        # 시퀀스 번호로 정렬 (오름차순)
+        parsed_frames.sort(key=lambda x: x[0])
+        
+        latest_result = [0,0,0]
+        
+        # 정렬된 순서대로 처리
+        for tx_cnt_from_rx, data, tlvc_ofs, sharing_information in parsed_frames:
+            self.rx_cnt += 1
+            self.rx_rate += 1
+            
+            self.set_rx_values(sharing_information)
+            self.tx_cnt_from_rx = tx_cnt_from_rx
+            
+            self._update_prr_pps(self.tx_cnt_from_rx)
+            self.calc_rtt(socket.ntohl(sharing_information.tx_cnt_from_rx))
+            
+            get_time = sharing_information.timestamp
+            self.calc_delay(get_time)
+            
+            distance = math.sqrt((self.rx_latitude - self.tx_latitude) ** 2 + 
+                            (self.rx_longtude - self.tx_longitude) ** 2)
+            self.communication_performance['v2x'] = 1
+            self.communication_performance['distance'] = distance
+            
+            # 장애물 파싱
+            reported_obs = socket.ntohs(sharing_information.obstacle_num)
+            base_size = sizeof(V2x_App_SI_TLVC)
+            obs_size = sizeof(ObstacleInformation)
+            
+            if len(data) < tlvc_ofs + base_size:
+                max_obs_by_len = 0
+            else:
+                payload_room = len(data) - (tlvc_ofs + base_size)
+                max_obs_by_len = max(0, payload_room // obs_size)
+            
+            obs_count = min(reported_obs, max_obs_by_len)
+            
+            obstacles = []
+            for i in range(obs_count):
+                ofs = tlvc_ofs+sizeof(V2x_App_SI_TLVC)+(i*sizeof(ObstacleInformation))
+                if len(data) >= ofs + sizeof(ObstacleInformation):
+                    obstacle = ObstacleInformation.from_buffer_copy(
+                        data[ofs:ofs+sizeof(ObstacleInformation)])
+                    obstacles.append(obstacle)
+            
+            state, path, obstacles = self.organize_data(len(data), sharing_information, obstacles)
+            rx_message = self.get_log_datum(self.be64toh(get_time), state, path, obstacles)
+            
+            # 비동기 로깅
+            try:
+                self._log_queue.put_nowait(('rx', self.tx_cnt_from_rx, rx_message))
+                self._log_queue.put_nowait(('perf', 0, self.get_performance_log()))
+            except:
+                pass
+            
+            latest_result = [state, path, obstacles]
+        
+        return latest_result
 
     def set_tx_values(self, state):
         self.tx_latitude = state[2]
