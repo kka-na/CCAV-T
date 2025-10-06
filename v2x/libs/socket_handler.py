@@ -454,7 +454,7 @@ class SocketHandler:
         
     def receive(self):
         # 수신 타임아웃 최소화
-        self.fd.settimeout(0.01)  # 10ms
+        self.fd.settimeout(0.003)  # 10ms
         try:
             chunk = self.fd.recv(sizeof(c_char)*MAX_TX_PACKET_TO_OBU)
             if not chunk:

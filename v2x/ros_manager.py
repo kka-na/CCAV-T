@@ -22,7 +22,7 @@ class RosManager:
         
     def set_values(self):
         #TODO: HZ -> 50 
-        self.Hz = 300
+        self.Hz = 180
         self.rx_res = None
         self.rate = rospy.Rate(self.Hz)
         self.info_received = False
@@ -71,7 +71,6 @@ class RosManager:
 
     def publish(self, result):
         if result == [0,0,0]:
-            rospy.logwarn("No Target Share Info to Publish")
             return
         
         vehicle_state = result[0]
