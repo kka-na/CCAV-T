@@ -22,7 +22,7 @@ class RosManager:
         
     def set_values(self):
         #TODO: HZ -> 50 
-        self.Hz = 30
+        self.Hz = 50
         self.rx_res = None
         self.rate = rospy.Rate(self.Hz)
         self.info_received = False
@@ -71,7 +71,6 @@ class RosManager:
 
     def publish(self, result):
         if result == [0,0,0]:
-            rospy.logwarn("No Target Share Info to Publish")
             return
         
         vehicle_state = result[0]
@@ -140,7 +139,6 @@ class RosManager:
                 self.publish(self.rx_res)
                 self.publish_calc(calc_res)
             rate.sleep()
-
 
     def execute(self):
         signal.signal(signal.SIGINT, signal_handler)
