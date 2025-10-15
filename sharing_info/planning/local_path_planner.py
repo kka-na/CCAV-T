@@ -94,7 +94,7 @@ class LocalPathPlanner:
             self.temp_signal = self.current_signal
             self.change_state = False
             return 'STRAIGHT'
-        if self.reject_once and self.reject_cnt < 60 : 
+        if self.reject_once and self.reject_cnt < 70 : 
             self.reject_cnt += 1
             return 'STRAIGHT'
         

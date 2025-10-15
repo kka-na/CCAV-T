@@ -12,5 +12,5 @@ python3 main.py ego ioniq5 KIAPI &
 cd ../utils
 python3 make_data.py ego &
 python3 obigo_control.py ego &
-cd ~/Documents/bags/1014
+cd ~/Documents/bags/1015
 rosbag record /clicked_point /ego/look_a_head /ego/look_a_head_array /ego/plot_point /ego/plot_point_array /gmsl_camera/dev/video4/compressed /imu/data_raw /mobinha/perception/lidar/track_box /novatel/oem7/bestpos /novatel/oem7/bestutm /novatel/oem7/corrimu /novatel/oem7/inspva /novatel/oem7/odom /ego/TargetShareInfo /ego/user_input /ego/CommunicationPerformance /ego/test_case /ego/EgoShareInfo /ego/emergency_image /ego/dangerous_obstacle
