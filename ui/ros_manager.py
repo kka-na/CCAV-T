@@ -3,7 +3,7 @@ import rospy
 import random
 from datetime import datetime
 from ccavt.msg import *
-from std_msgs.msg import Float32MultiArray, String
+from std_msgs.msg import Float32MultiArray, String, Bool
 from visualization_msgs.msg import Marker
 from sensor_msgs.msg import CompressedImage
 from PyQt5.QtGui import QImage, QPixmap
@@ -111,7 +111,7 @@ class RosManager:
     def set_values(self):
         self.Hz = 10
         self.rate = rospy.Rate(self.Hz)
-        self.user_input = [0,0,0,0] # selfdriving, signal, target_velocity, selected scenario
+        self.user_input = [0,0,0,0,0] # selfdriving, signal, target_velocity, scenario, mode
 
         self.signals = {
             'ego': 0,
@@ -121,7 +121,9 @@ class RosManager:
         self.ego_pos = [0,0]
         self.ego_velocity = 0
         self.v2v_target_velocity = 0
-        self.test_case = '시나리오 : '
+        self.target_pos = [0, 0]  # Target 위치
+        self.target_distance = 0.0  # Target과의 거리
+        self.test_case = 'Scenario : '
         self.communication_performance = {
             'comulative_time':0,
             'distance':0,
@@ -132,6 +134,7 @@ class RosManager:
             'packet_rate':0
         }
         self.communication_on = False
+        self.endpoint_reached = False  # Endpoint 도달 플래그
 
     def set_protocol(self):
         rospy.Subscriber(f'/{self.type}/EgoShareInfo', ShareInfo, self.ego_share_info_cb)
@@ -156,7 +159,10 @@ class RosManager:
         
         rospy.Subscriber(f'/{self.type}/CommunicationPerformance', Float32MultiArray, self.communication_performance_cb)
         rospy.Subscriber(f'/{self.type}/test_case', String, self.test_case_cb)
+        rospy.Subscriber(f'/{self.type}/endpoint_reached', Bool, self.endpoint_reached_cb)
         self.pub_user_input = rospy.Publisher(f'/{self.type}/user_input', Float32MultiArray, queue_size=1)
+        self.pub_test_mode = rospy.Publisher(f'/{self.type}/test_mode', String, queue_size=1)
+        self.pub_with_coop = rospy.Publisher(f'/{self.type}/with_coop', String, queue_size=1)
         self.pub_plot_point = rospy.Publisher(f'/{self.type}/plot_point', Marker, queue_size=1)
         self.pub_emergency_image = rospy.Publisher(f'/{self.type}/emergency_image', CompressedImage, queue_size=1)
 
@@ -186,9 +192,16 @@ class RosManager:
     def target_share_info_cb(self, msg:ShareInfo):
         self.signals['target']  = msg.signal.data
         self.v2v_target_velocity = int(msg.velocity.data*3.6)
+        self.target_pos = [msg.pose.x, msg.pose.y]
+
+        # Ego와 Target 사이의 거리 계산
+        import math
+        dx = self.ego_pos[0] - self.target_pos[0]
+        dy = self.ego_pos[1] - self.target_pos[1]
+        self.target_distance = math.sqrt(dx**2 + dy**2)
     
     def test_case_cb(self, msg:String):
-        self.test_case = f"시나리오 : {msg.data}"
+        self.test_case = f"Scenario : {msg.data}"
 
     def communication_performance_cb(self, msg):
         state, v2x, rtt, mbps, packet_size, packet_rate, distance, delay = msg.data
@@ -247,6 +260,13 @@ class RosManager:
     def publish(self):
         self.pub_user_input.publish(Float32MultiArray(data=list(self.user_input)))
 
+    def publish_test_mode(self, test_mode):
+        self.pub_test_mode.publish(String(data=test_mode))
+
+    def publish_with_coop(self, with_coop):
+        # Convert boolean to string for ROS message
+        self.pub_with_coop.publish(String(data='true' if with_coop else 'false'))
+
     def publish_plot_point(self, pt):
         marker = Marker()
         marker.type = Marker.SPHERE
@@ -266,7 +286,13 @@ class RosManager:
         marker.pose.position.y = float(pt[1])
         marker.pose.position.z = 0.2
         self.pub_plot_point.publish(marker)
-        
+
+    def endpoint_reached_cb(self, msg):
+        """Endpoint 도달 상태 콜백"""
+        if msg.data:
+            self.endpoint_reached = True
+            rospy.loginfo(f"[UI] Endpoint reached callback - setting flag")
+
     def cleanup(self):
         """종료 시 리소스 정리"""
         self.image_processor.stop()

@@ -6,7 +6,7 @@ import atexit
 from datetime import datetime
 
 from ccavt.msg import *
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray, String
 
 def signal_handler(sig, frame):
     rospy.signal_shutdown("SIGINT received")
@@ -22,7 +22,7 @@ class RosManager:
         
     def set_values(self):
         #TODO: HZ -> 50 
-        self.Hz = 50
+        self.Hz = 180
         self.rx_res = None
         self.rate = rospy.Rate(self.Hz)
         self.info_received = False
@@ -35,6 +35,7 @@ class RosManager:
 
     def set_protocol(self):
         rospy.Subscriber(f'/{self.type}/EgoShareInfo', ShareInfo, self.share_info_cb)
+        rospy.Subscriber(f'/{self.type}/test_case', String, self.test_case_cb)
         self.pub_target_info = rospy.Publisher(f'{self.type}/TargetShareInfo', ShareInfo, queue_size=1)
         self.pub_communication_performance = rospy.Publisher(f'{self.type}/CommunicationPerformance', Float32MultiArray, queue_size=1)
 
@@ -49,8 +50,12 @@ class RosManager:
         self.vehicle_path = paths
         obstacles = []
         for o in msg.obstacles:
-            obstacles.append((o.cls.data, o.pose.x, o.pose.y, o.pose.theta, o.velocity.data, o.distance.data, o.dangerous.data))
+            obstacles.append((o.cls.data, o.pose.x, o.pose.y, o.pose.theta, o.velocity.data, o.distance.data, o.dangerous.data, o.lidar_delay.data))
         self.vehicle_obstacles = obstacles
+
+    
+    def test_case_cb(self, msg):
+        self.v2v_sharing.socket_handler.start_logging(msg.data)
     
     def publish_calc(self, system):
         self.pub_communication_performance.publish(Float32MultiArray(data=list(system.values())))
@@ -101,6 +106,8 @@ class RosManager:
                 obstacle.pose.theta = obs[3]
                 obstacle.velocity.data = obs[4]
                 obstacle.distance.data = obs[5]
+                obstacle.dangerous.data = obs[6]
+                obstacle.lidar_delay.data = obs[7]  
                 share_info.obstacles.append(obstacle)
             
         self.pub_target_info.publish(share_info)

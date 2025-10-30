@@ -54,12 +54,21 @@ class SharingInfo():
         rate = rospy.Rate(20)
         while not rospy.is_shutdown():
             self.update_value()
+
+            self.RM.check_auto_signal()
+
+            if self.RM.check_endpoint():
+                rospy.loginfo(f"[ENDPOINT] Stopping node - endpoint reached")
+                rospy.signal_shutdown("Endpoint reached")
+                break
+
             lpp_result = self.path_planning()
             if lpp_result is not None:
                 vp_result = self.velocity_planning(lpp_result)
                 emergency = self.perception_handling()
                 self.RM.publish(lpp_result, vp_result)
                 self.RM.publish_inter_pt(self.lpp.get_interpt())
+                self.RM.publish_bsd_zone(self.lpp.get_bsd_info())
                 self.RM.publish_emergency(emergency)
             rate.sleep()
 
@@ -74,8 +83,9 @@ def main():
         type = str(sys.argv[1])
         map_name = str(sys.argv[2])
         test = int(sys.argv[3])
-    
+
     si = SharingInfo(type, map_name, test)
+
     si.execute()
 
 if __name__=="__main__":

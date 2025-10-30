@@ -4,6 +4,8 @@ import planning.libs.planning_helper as phelper
 import copy
 import rospy
 import math
+import os
+from datetime import datetime
 
 KPH_TO_MPS = 1 / 3.6
 MPS_TO_KPH = 3.6
@@ -46,6 +48,13 @@ class LocalPathPlanner:
 
         self.reject_once = False
         self.reject_once_change_once = False
+        self.reject_cnt = 0
+        self.accept_received = False
+
+        self.retry_attempted = False
+        self.waiting_for_retry = False
+        self.saved_signal = 0
+        self.bsd_detected_once = False
 
         self.safety = 0
         self.target_path = []
@@ -55,19 +64,56 @@ class LocalPathPlanner:
         self.inter_pt = None
         self.target_pose = [0,0]
 
-        self.bsd_range = [50, 5]
-        self.ttz_th = 5
+        # BSD range: [ts_rear, ts_front, td_min, td_max]
+        self.bsd_range = [-12, 10, 1.5, 6.0]
+        self.extended_range = [-50, 30, 1.5, 6.0]
+
+        # Safety thresholds
+        self.ttc_threshold = 5.0
+        self.delta_v_threshold = 5.0
+
         self.bsd = False
         self.bsd_cnt = 0
+        self.immediate_bsd = False
+        self.extended_bsd = False
 
         self.max_velocity = 0
+        self.with_coop = True
+        self.test_mode = 'unknown'
+
+        # 차선 변경 효율성 측정용
+        self.lane_change_request_time = None  # 차선 변경 요청 시점 (signal 발생)
+        self.lane_change_start_time = None    # 차선 변경 실제 시작 시점 (CHANGE 상태)
+        self.lane_change_delay = None         # 요청부터 시작까지 걸린 시간
+
+        # 로그 파일 경로 설정
+        log_dir = os.path.join(os.path.dirname(__file__), '../../logs')
+        os.makedirs(log_dir, exist_ok=True)
+        self.log_file_path = os.path.join(log_dir, 'lane_change_efficiency.txt')
     
     def update_value(self,car, user_input, target_info, target_path, dangerous_obstacle):
         self.local_pose = [car['x'], car['y']]
         self.current_velocity = car['v']
+
+        # 차선 변경 요청 시점 기록 (signal이 0,3,4,5 등에서 1,2로 변경될 때)
+        prev_signal = self.current_signal
         self.current_signal = user_input['signal']
+
+        if prev_signal not in [1, 2] and self.current_signal in [1, 2]:
+            if self.lane_change_request_time is None:
+                self.lane_change_request_time = rospy.get_time()
+                mode = "WC" if self.with_coop else "WOC"
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                log_msg = f"[{timestamp}] [{self.type}][{mode}][Scenario:{self.scenario}] Lane change REQUESTED at {self.lane_change_request_time:.2f}s (signal: {self.current_signal})"
+                rospy.loginfo(log_msg)
+
+                # 파일에 저장
+                with open(self.log_file_path, 'a') as f:
+                    f.write(log_msg + '\n')
+
         self.scenario = (user_input['scenario'])
         self.max_velocity = user_input['target_velocity']
+        self.with_coop = user_input.get('with_coop', True)
         self.target_signal = target_info[1]
         self.target_velocity = target_info[2]
         self.target_pose = [target_info[3], target_info[4]]
@@ -87,23 +133,73 @@ class LocalPathPlanner:
             return curr_lane_waypoints, lane_number
 
     def check_planner_state(self, caution):
-        # signal : 1 left change, 2 right change, 3 straight, 4 merge accept, 5 merge deny, 6 merge reset, 7 emergency
         if self.local_path == None:
             return 'INIT'
+
+        # ETrA 시나리오에서 caution이 감지되면 emergency 처리
+        # WOC 모드에서는 target도 자체적으로 emergency 판단
+        if caution:
+            if not self.change_state:
+                # Emergency 신호 발생
+                self.temp_signal = 7
+                self.change_state = True
+                rospy.logwarn(f"[{self.type}] Caution detected! Emergency lane change triggered.")
+                return 'EMERGENCY_CHANGE'
+            # 이미 변경 중이라면 계속 진행
+
+        if self.target_signal == 4:
+            self.accept_received = True
+
+        if self.accept_received and self.change_state:
+            idnidx = self.phelper.lanelet_matching(self.local_pose)
+            if idnidx[0] == self.change_id:
+                self.change_state = False
+                self.accept_received = False
+                # 차선 변경 완료 - 측정 변수 리셋
+                self._reset_lane_change_timing()
+                return 'STRAIGHT'
+            else:
+                return 'CHANGING'
+
         if self.current_signal == 3:
             self.temp_signal = self.current_signal
             self.change_state = False
+            # 차선 변경 취소 - 측정 변수 리셋
+            self._reset_lane_change_timing()
             return 'STRAIGHT'
-        if self.reject_once and self.reject_cnt < 60 : 
+
+        if self.waiting_for_retry:
+            if not self.immediate_bsd and not self.extended_bsd and not self.bsd:
+                self.waiting_for_retry = False
+                self.retry_attempted = True
+                self.reject_once = False
+                self.reject_cnt = 0
+                self.current_signal = self.saved_signal
+                self.temp_signal = self.saved_signal
+                self.change_state = True
+                # 차선 변경 시작 (retry 성공)
+                self._record_lane_change_start()
+                return 'CHANGE'
+            else:
+                if self.reject_once:
+                    self.reject_cnt += 1
+                return 'STRAIGHT'
+
+        if self.reject_once and self.reject_cnt < 60:
             self.reject_cnt += 1
             return 'STRAIGHT'
-        
+
+        if self.bsd and self.bsd_cnt < 10:
+            return 'STRAIGHT'
+
         if not self.change_state:
             if self.temp_signal != self.current_signal and self.current_signal in [1, 2]:
                 self.temp_signal = self.current_signal
                 self.change_state = True
+                # 차선 변경 시작 (일반 신호)
+                self._record_lane_change_start()
                 return 'CHANGE'
-            elif self.temp_signal != self.current_signal and self.current_signal in [7] :
+            elif self.temp_signal != self.current_signal and self.current_signal in [7]:
                 self.temp_signal = self.current_signal
                 self.change_state = True
                 return 'EMERGENCY_CHANGE'
@@ -111,24 +207,74 @@ class LocalPathPlanner:
                 self.temp_signal = self.target_signal
                 self.change_state = True
                 return 'EMERGENCY_CHANGE'
-
             else:
                 return 'STRAIGHT'
         else:
             idnidx = self.phelper.lanelet_matching(self.local_pose)
             if idnidx[0] == self.change_id:
                 self.change_state = False
+                # 차선 변경 완료 - 측정 변수 리셋
+                self._reset_lane_change_timing()
                 return 'STRAIGHT'
-            else: # if merging rejected
-                if (self.temp_signal != self.target_signal and self.target_signal == 5): #Target merging rejected
-                    if not self.reject_once:
-                        self.reject_once = True 
+            else:
+                if (self.temp_signal != self.target_signal and self.target_signal == 5):
+                    if not self.reject_once and not self.retry_attempted:
+                        self.saved_signal = self.temp_signal
+                        self.waiting_for_retry = True
+                    self.reject_once = True
                     self.temp_signal = 3
                     self.change_state = False
+                    # Reject 받아서 중단 (retry 대기 상태로 진입, 리셋하지 않음)
+                    return 'STRAIGHT'
+                elif self.bsd:
+                    if not self.retry_attempted and not self.waiting_for_retry:
+                        self.saved_signal = self.current_signal
+                        self.waiting_for_retry = True
+                        self.bsd_detected_once = True
+                    self.temp_signal = 3
+                    self.change_state = False
+                    # BSD 감지로 중단 (retry 대기 상태로 진입, 리셋하지 않음)
                     return 'STRAIGHT'
                 else:
                     return 'CHANGING'
-    
+
+    def _record_lane_change_start(self):
+        """차선 변경 실제 시작 시점 기록 및 지연 시간 계산"""
+        if self.lane_change_start_time is None and self.lane_change_request_time is not None:
+            self.lane_change_start_time = rospy.get_time()
+            self.lane_change_delay = self.lane_change_start_time - self.lane_change_request_time
+            mode = "WC" if self.with_coop else "WOC"
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+
+            log_msg1 = f"[{timestamp}] [{self.type}][{mode}][Scenario:{self.scenario}] Lane change STARTED at {self.lane_change_start_time:.2f}s"
+            log_msg2 = f"[{timestamp}] [{self.type}][{mode}][Scenario:{self.scenario}] === LANE CHANGE DELAY: {self.lane_change_delay:.3f}s ==="
+
+            rospy.loginfo(log_msg1)
+            rospy.logwarn(log_msg2)
+
+            # 파일에 저장
+            with open(self.log_file_path, 'a') as f:
+                f.write(log_msg1 + '\n')
+                f.write(log_msg2 + '\n')
+
+    def _reset_lane_change_timing(self):
+        """차선 변경 효율성 측정 변수 리셋"""
+        if self.lane_change_delay is not None:
+            mode = "WC" if self.with_coop else "WOC"
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            log_msg = f"[{timestamp}] [{self.type}][{mode}][Scenario:{self.scenario}] Lane change COMPLETED. Total delay was {self.lane_change_delay:.3f}s"
+
+            rospy.loginfo(log_msg)
+
+            # 파일에 저장
+            with open(self.log_file_path, 'a') as f:
+                f.write(log_msg + '\n')
+                f.write('---\n')  # 구분선
+
+        self.lane_change_request_time = None
+        self.lane_change_start_time = None
+        self.lane_change_delay = None
+
     def get_change_path(self, sni,  path_len, to=1):
         wps, uni = self.phelper.get_straight_path(sni, path_len)
         c_pt = wps[-1]
@@ -150,18 +296,11 @@ class LocalPathPlanner:
         n_id = r_id if r_id is not None else l_id
         
         if self.type == 'target':
-            if self.scenario == 5:
-                n_id = l_id
-            elif self.scenario == 6:
+            if self.scenario in [10,11]:
                 n_id = l_id
         elif self.type == 'ego':
-            if self.scenario == 6:
+            if self.scenario in [8,10,11]:
                 n_id = l_id
-        
-        #TODO: 0819
-        # elif self.type == 'target':
-        #     if self.scenario == 6:
-        #         n_id = l_id
 
         if n_id is not None:
             r = self.MAP.lanelets[n_id]['waypoints']
@@ -270,18 +409,17 @@ class LocalPathPlanner:
             now_idx = phelper.find_nearest_idx(self.local_path, self.local_pose)
             l_o1 = (inter_idx - now_idx)
 
-            t_v = c_v = self.max_velocity/3.6
-            #c_v = self.current_velocity
-            #t_v = self.target_velocity
+            c_v = self.current_velocity
+            t_v = self.target_velocity
             l_o2 = c_v * ((l_target) / t_v) if t_v != 0 else 0
             l_o3 = l_o1 - l_o2
-            d_TC = c_v * (self.t_reaction_change)
-
+            d_TC = c_v * (self.t_reaction_change+1)
             if inter_idx <= now_idx + 5:
                 safety = 0
             else:
                 safety = 1 if abs(l_o3) > d_TC else 2
-
+            
+            
             # 안전도 확정 로직
             if self.safety != safety:
                 if len(self.check_safety) < 1:
@@ -291,6 +429,7 @@ class LocalPathPlanner:
                 self.check_safety.append(safety)
                 if len(self.check_safety) > 5:
                     self.confirm_safety = True
+            
             
     def is_insied_circle(self, pt1, pt2, radius):
         if pt1 is None or pt2 is None:
@@ -304,36 +443,132 @@ class LocalPathPlanner:
     def get_interpt(self):
         return self.inter_pt
     
+    def get_bsd_info(self):
+        if not self.with_coop and self.current_signal in [1, 2]:
+            return {
+                'active': True,
+                'signal': self.current_signal,
+                'bsd_range': self.bsd_range,
+                'local_path': self.local_path
+            }
+        return None
+
     def calc_bsd(self):
         bsd = False
-        if self.current_signal in [1,2]:
+        ts, td = 0, 0
+        immediate_bsd = False
+        extended_zone = False
+        safety_evaluation = True
+
+        if self.current_signal in [1, 2]:
             ts, td = self.phelper.object_to_frenet(self.local_path, self.target_pose)
-            if ts > self.bsd_range[0] and ts < self.bsd_range[1] and abs(td) < self.bsd_range[1]:
-                d = abs(ts)-8
-                v_rel = abs(self.target_velocity - self.current_velocity)
-                ttz = d/v_rel
-                if ttz < self.ttz_th:
-                    bsd = True
-                    self.bsd = bsd
-                    self.temp_signal = 3
-                print(d, v_rel, ttz, bsd)
+
+            immediate_bsd = self._is_in_immediate_bsd(ts, td)
+            if immediate_bsd:
+                bsd = True
+                self.bsd = bsd
+                self.immediate_bsd = True
+                self.extended_bsd = False
+            else:
+                self.immediate_bsd = False
+                extended_zone = self._is_in_extended_zone(ts, td)
+                if extended_zone:
+                    safety_evaluation = self._evaluate_lane_change_safety(ts, td)
+                    if not safety_evaluation:
+                        bsd = True
+                        self.bsd = bsd
+                        self.extended_bsd = True
+                    else:
+                        self.extended_bsd = False
+                else:
+                    self.extended_bsd = False
+        else:
+            self.immediate_bsd = False
+            self.extended_bsd = False
+
+        bsd_timeout = False
         if self.bsd:
-            if self.bsd_cnt < 15:
+            if self.bsd_cnt < 10:
                 self.bsd_cnt += 1
             else:
                 self.bsd = False
                 self.bsd_cnt = 0
+                bsd_timeout = True
+
+        distance = abs(ts) if self.current_signal in [1, 2] else 0
+        v_rel = self.target_velocity - self.current_velocity
+        ttc = distance / abs(v_rel) if abs(v_rel) > 0.1 else float('inf')
+        min_gap = 2.0 * self.current_velocity
+        delta_v_safe = abs(v_rel) <= self.delta_v_threshold
+        gap_safe = distance >= min_gap
+        ttc_safe = ttc > self.ttc_threshold
+
         return self.bsd
+
+    def _is_in_immediate_bsd(self, ts, td):
+        ts_rear, ts_front, td_min, td_max = self.bsd_range
+
+        in_longitudinal = (ts_rear <= ts <= ts_front)
+
+        if self.current_signal == 1:
+            in_lateral = (td_min <= td <= td_max) if td > 0 else False
+        else:
+            in_lateral = (td_min <= -td <= td_max) if td < 0 else False
+
+        return in_longitudinal and in_lateral
+
+    def _is_in_extended_zone(self, ts, td):
+        ts_rear, ts_front, td_min, td_max = self.extended_range
+
+        in_longitudinal = (ts_rear <= ts <= ts_front)
+
+        if self.current_signal == 1:
+            in_lateral = (td_min <= td <= td_max) if td > 0 else False
+        else:
+            in_lateral = (td_min <= -td <= td_max) if td < 0 else False
+
+        return in_longitudinal and in_lateral
+
+    def _evaluate_lane_change_safety(self, ts, td):
+        distance = abs(ts)
+        v_rel = self.target_velocity - self.current_velocity
+
+        if abs(v_rel) > 0.1:
+            ttc = distance / abs(v_rel)
+        else:
+            ttc = float('inf')
+
+        delta_v_safe = abs(v_rel) <= self.delta_v_threshold
+        min_gap = 2.0 * self.current_velocity
+        gap_safe = distance >= min_gap
+        ttc_safe = ttc > self.ttc_threshold
+
+        is_safe = ttc_safe and delta_v_safe and gap_safe
+
+        return is_safe
 
     def execute(self):
         if self.local_pose is None or self.local_pose[0] == 'inf':
             return None
-        if self.type == 'ego':
-            caution = self.phelper.calc_caution_by_ttc(self.dangerous_obstacle, self.local_pose, self.current_velocity)
-        else:
-            caution = False
+
+        # Caution 계산: ETrA 시나리오(7-12)에서만
         caution = False
-        
+        is_etra_scenario = 7 <= self.scenario <= 12
+
+        if is_etra_scenario:
+            if self.with_coop:
+                # WC 모드: ego만 caution 계산
+                if self.type == 'ego':
+                    caution = self.phelper.calc_caution_by_ttc(self.dangerous_obstacle, self.local_pose, self.current_velocity)
+            else:
+                # WOC 모드: ego, target 둘 다 caution 계산
+                caution = self.phelper.calc_caution_by_ttc(self.dangerous_obstacle, self.local_pose, self.current_velocity)
+
+        # Ego: WC/WOC 모두 BSD 체크 (경로 생성 전)
+        bsd = False
+        if self.type == 'ego':
+            bsd = self.calc_bsd()
+
         pstate = self.check_planner_state(caution)
         self.local_path = self.make_path(pstate, self.local_pose)
         if self.local_path is None or len(self.local_path) <= 0:
@@ -343,11 +578,11 @@ class LocalPathPlanner:
         self.local_path = phelper.smooth_interpolate(self.local_path)
         if self.local_lane_number != self.prev_lane_number:
             self.pre_lane_number = self.local_lane_number
-        
-        bsd = False
-        if self.type == 'target':
+
+        # WC 모드: target이면 merge_safety_calc 실행
+        if self.with_coop and self.type == 'target':
             self.merge_safety_calc()
-        # bsd = self.calc_bsd() -> without cooperation
+
         target_pos = self.set_your_position()
         return self.local_path, limit_local_path, local_waypoints, self.local_lane_number, caution, self.safety, bsd, target_pos 
 

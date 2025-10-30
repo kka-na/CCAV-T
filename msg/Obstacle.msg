@@ -4,3 +4,4 @@ geometry_msgs/Pose2D pose
 std_msgs/Float32 velocity
 std_msgs/Float32 distance
 std_msgs/Int32 dangerous
+std_msgs/Float32 lidar_delay

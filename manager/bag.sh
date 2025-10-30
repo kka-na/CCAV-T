@@ -1,6 +1,6 @@
 #!/bin/bash
-# cd ../sharing_info
-# python3 main.py ego Midan 0&
+cd ../sharing_info
+python3 main.py ego Midan 0&
 cd ../v2x
 python3 main.py ego 0 out &
 cd ../ui/visualizer

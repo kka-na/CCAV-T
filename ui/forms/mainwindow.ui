@@ -61,11 +61,99 @@
             <string notr="true">background-color: grey;</string>
            </property>
            <property name="text">
-            <string> 자율주행 OFF</string>
+            <string>ADS OFF</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
            </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QTabWidget" name="tabWidget_6">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>1</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <family>Meera</family>
+             <pointsize>13</pointsize>
+             <weight>50</weight>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(238, 238, 236);</string>
+           </property>
+           <property name="currentIndex">
+            <number>0</number>
+           </property>
+           <widget class="QWidget" name="tab_11">
+            <attribute name="title">
+             <string>ADS</string>
+            </attribute>
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout">
+               <item>
+                <widget class="QPushButton" name="startButton">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="font">
+                  <font>
+                   <family>Manjari</family>
+                   <pointsize>20</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>▶️
+(q)</string>
+                 </property>
+                 <property name="shortcut">
+                  <string>Q</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="stopButton">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="font">
+                  <font>
+                   <family>Manjari</family>
+                   <pointsize>20</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(239, 41, 41);</string>
+                 </property>
+                 <property name="text">
+                  <string>■
+(e)</string>
+                 </property>
+                 <property name="shortcut">
+                  <string>E</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
           </widget>
          </item>
          <item row="6" column="0">
@@ -92,7 +180,7 @@
            </property>
            <widget class="QWidget" name="tab_2">
             <attribute name="title">
-             <string>차량 신호</string>
+             <string>Signal</string>
             </attribute>
             <layout class="QVBoxLayout" name="verticalLayout_6">
              <item>
@@ -200,94 +288,6 @@
            </widget>
           </widget>
          </item>
-         <item row="3" column="0">
-          <widget class="QTabWidget" name="tabWidget_6">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>1</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="font">
-            <font>
-             <family>Meera</family>
-             <pointsize>13</pointsize>
-             <weight>50</weight>
-             <bold>false</bold>
-            </font>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">background-color: rgb(238, 238, 236);</string>
-           </property>
-           <property name="currentIndex">
-            <number>0</number>
-           </property>
-           <widget class="QWidget" name="tab_11">
-            <attribute name="title">
-             <string>자율주행 모드</string>
-            </attribute>
-            <layout class="QHBoxLayout" name="horizontalLayout_3">
-             <item>
-              <layout class="QHBoxLayout" name="horizontalLayout">
-               <item>
-                <widget class="QPushButton" name="startButton">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="font">
-                  <font>
-                   <family>Manjari</family>
-                   <pointsize>20</pointsize>
-                   <weight>75</weight>
-                   <bold>true</bold>
-                  </font>
-                 </property>
-                 <property name="text">
-                  <string>▶️
-(q)</string>
-                 </property>
-                 <property name="shortcut">
-                  <string>Q</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QPushButton" name="stopButton">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="font">
-                  <font>
-                   <family>Manjari</family>
-                   <pointsize>20</pointsize>
-                   <weight>75</weight>
-                   <bold>true</bold>
-                  </font>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">background-color: rgb(239, 41, 41);</string>
-                 </property>
-                 <property name="text">
-                  <string>■
-(e)</string>
-                 </property>
-                 <property name="shortcut">
-                  <string>E</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-            </layout>
-           </widget>
-          </widget>
-         </item>
          <item row="0" column="0">
           <widget class="QTabWidget" name="tabWidget_2">
            <property name="sizePolicy">
@@ -312,7 +312,7 @@
            </property>
            <widget class="QWidget" name="tab">
             <attribute name="title">
-             <string>시나리오 설정</string>
+             <string>Scenario</string>
             </attribute>
             <layout class="QGridLayout" name="gridLayout_12">
              <item row="8" column="0">
@@ -322,101 +322,42 @@
                </property>
               </widget>
              </item>
-             <item row="9" column="0">
-              <widget class="QGroupBox" name="groupBox">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="title">
-                <string>플롯 포인트</string>
-               </property>
-               <layout class="QGridLayout" name="gridLayout_11">
-                <item row="0" column="0">
-                 <layout class="QGridLayout" name="gridLayout_10">
-                  <item row="0" column="2">
-                   <widget class="QRadioButton" name="radioPlot3">
-                    <property name="text">
-                     <string>3</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="1">
-                   <widget class="QRadioButton" name="radioPlot2">
-                    <property name="text">
-                     <string>2</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="0">
-                   <widget class="QRadioButton" name="radioPlot1">
-                    <property name="text">
-                     <string>1</string>
-                    </property>
-                    <property name="checked">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="2" column="1">
-                   <widget class="QPushButton" name="newButton">
-                    <property name="text">
-                     <string>New</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="2" column="2">
-                   <widget class="QPushButton" name="loadButton">
-                    <property name="text">
-                     <string>Load</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="0">
-                   <widget class="QRadioButton" name="radioPlot4">
-                    <property name="text">
-                     <string>4</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="1">
-                   <widget class="QRadioButton" name="radioPlot5">
-                    <property name="text">
-                     <string>5</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="2">
-                   <widget class="QRadioButton" name="radioPlot6">
-                    <property name="text">
-                     <string>6</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
+             <item row="5" column="0">
+              <widget class="QWidget" name="widget_4" native="true">
+               <layout class="QGridLayout" name="gridLayout_14">
+                <item row="1" column="1">
+                 <widget class="QRadioButton" name="radioVanilla">
+                  <property name="text">
+                   <string>vanilla</string>
+                  </property>
+                  <property name="checked">
+                   <bool>false</bool>
+                  </property>
+                  <property name="autoRepeat">
+                   <bool>false</bool>
+                  </property>
+                  <property name="autoExclusive">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QRadioButton" name="radioCooperative">
+                  <property name="text">
+                   <string>cooperative</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                  <property name="autoRepeat">
+                   <bool>false</bool>
+                  </property>
+                  <property name="autoExclusive">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
                 </item>
                </layout>
-              </widget>
-             </item>
-             <item row="7" column="0">
-              <widget class="QLabel" name="testCase">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="font">
-                <font>
-                 <family>Meera</family>
-                 <pointsize>14</pointsize>
-                </font>
-               </property>
-               <property name="text">
-                <string>시나리오 : </string>
-               </property>
               </widget>
              </item>
              <item row="1" column="0">
@@ -428,10 +369,10 @@
                 </sizepolicy>
                </property>
                <layout class="QGridLayout" name="gridLayout_9">
-                <item row="0" column="0">
+                <item row="1" column="0">
                  <layout class="QGridLayout" name="gridLayout">
-                  <item row="3" column="0">
-                   <widget class="QCheckBox" name="check4">
+                  <item row="4" column="2">
+                   <widget class="QCheckBox" name="check9">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                       <horstretch>0</horstretch>
@@ -447,18 +388,31 @@
                      </font>
                     </property>
                     <property name="text">
-                     <string>시나리오1 ($)</string>
+                     <string>9</string>
                     </property>
                     <property name="shortcut">
-                     <string>$</string>
+                     <string>9</string>
                     </property>
                     <property name="autoExclusive">
                      <bool>true</bool>
                     </property>
                    </widget>
                   </item>
-                  <item row="3" column="1">
-                   <widget class="QCheckBox" name="check5">
+                  <item row="4" column="4">
+                   <widget class="QCheckBox" name="check11">
+                    <property name="text">
+                     <string>11</string>
+                    </property>
+                    <property name="shortcut">
+                     <string>-</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="3" column="0" colspan="4">
+                   <widget class="QLabel" name="label_11">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                       <horstretch>0</horstretch>
@@ -469,15 +423,69 @@
                      <font>
                       <family>Meera</family>
                       <pointsize>13</pointsize>
-                      <weight>50</weight>
-                      <bold>false</bold>
+                      <weight>75</weight>
+                      <bold>true</bold>
                      </font>
                     </property>
                     <property name="text">
-                     <string>시나리오2 (%)</string>
+                     <string>ETrA</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="0" colspan="4">
+                   <widget class="QLabel" name="label_9">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>75</weight>
+                      <bold>true</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>CLM</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="5">
+                   <widget class="QCheckBox" name="check6">
+                    <property name="text">
+                     <string>6</string>
                     </property>
                     <property name="shortcut">
-                     <string>%</string>
+                     <string>6</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="4" column="3">
+                   <widget class="QCheckBox" name="check10">
+                    <property name="text">
+                     <string>10</string>
+                    </property>
+                    <property name="shortcut">
+                     <string>0</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="4">
+                   <widget class="QCheckBox" name="check5">
+                    <property name="text">
+                     <string>5</string>
+                    </property>
+                    <property name="shortcut">
+                     <string>5</string>
                     </property>
                     <property name="autoExclusive">
                      <bool>true</bool>
@@ -501,64 +509,23 @@
                      </font>
                     </property>
                     <property name="text">
-                     <string>시나리오3 (#)</string>
+                     <string>3</string>
                     </property>
                     <property name="shortcut">
-                     <string>#</string>
+                     <string>3</string>
                     </property>
                     <property name="autoExclusive">
                      <bool>true</bool>
                     </property>
                    </widget>
                   </item>
-                  <item row="3" column="2">
-                   <widget class="QCheckBox" name="check6">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="font">
-                     <font>
-                      <family>Meera</family>
-                      <pointsize>13</pointsize>
-                      <weight>50</weight>
-                      <bold>false</bold>
-                     </font>
-                    </property>
+                  <item row="1" column="3">
+                   <widget class="QCheckBox" name="check4">
                     <property name="text">
-                     <string>시나리오3 (^)</string>
+                     <string>4</string>
                     </property>
                     <property name="shortcut">
-                     <string>^</string>
-                    </property>
-                    <property name="autoExclusive">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="1">
-                   <widget class="QCheckBox" name="check2">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="font">
-                     <font>
-                      <family>Meera</family>
-                      <pointsize>13</pointsize>
-                      <weight>50</weight>
-                      <bold>false</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>시나리오2 (@)</string>
-                    </property>
-                    <property name="shortcut">
-                     <string>@</string>
+                     <string>4</string>
                     </property>
                     <property name="autoExclusive">
                      <bool>true</bool>
@@ -582,10 +549,10 @@
                      </font>
                     </property>
                     <property name="text">
-                     <string>시나리오1 (!)</string>
+                     <string>1</string>
                     </property>
                     <property name="shortcut">
-                     <string>!</string>
+                     <string>1</string>
                     </property>
                     <property name="checked">
                      <bool>true</bool>
@@ -595,8 +562,8 @@
                     </property>
                    </widget>
                   </item>
-                  <item row="0" column="0" colspan="3">
-                   <widget class="QLabel" name="label_9">
+                  <item row="4" column="0">
+                   <widget class="QCheckBox" name="check7">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                       <horstretch>0</horstretch>
@@ -607,17 +574,36 @@
                      <font>
                       <family>Meera</family>
                       <pointsize>13</pointsize>
-                      <weight>75</weight>
-                      <bold>true</bold>
+                      <weight>50</weight>
+                      <bold>false</bold>
                      </font>
                     </property>
                     <property name="text">
-                     <string>2차년도 DRS</string>
+                     <string>7</string>
+                    </property>
+                    <property name="shortcut">
+                     <string>7</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
                     </property>
                    </widget>
                   </item>
-                  <item row="2" column="0" colspan="3">
-                   <widget class="QLabel" name="label_11">
+                  <item row="4" column="5">
+                   <widget class="QCheckBox" name="check12">
+                    <property name="text">
+                     <string>12</string>
+                    </property>
+                    <property name="shortcut">
+                     <string>=</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="1">
+                   <widget class="QCheckBox" name="check2">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                       <horstretch>0</horstretch>
@@ -628,30 +614,117 @@
                      <font>
                       <family>Meera</family>
                       <pointsize>13</pointsize>
-                      <weight>75</weight>
-                      <bold>true</bold>
+                      <weight>50</weight>
+                      <bold>false</bold>
                      </font>
                     </property>
                     <property name="text">
-                     <string>3차년도 ISF-CAV</string>
+                     <string>2</string>
+                    </property>
+                    <property name="shortcut">
+                     <string>2</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="4" column="1">
+                   <widget class="QCheckBox" name="check8">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <family>Meera</family>
+                      <pointsize>13</pointsize>
+                      <weight>50</weight>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>8</string>
+                    </property>
+                    <property name="shortcut">
+                     <string>8</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>true</bool>
                     </property>
                    </widget>
                   </item>
                  </layout>
                 </item>
+                <item row="0" column="0">
+                 <widget class="QWidget" name="widget_9" native="true">
+                  <layout class="QHBoxLayout" name="horizontalLayout_4">
+                   <item>
+                    <widget class="QRadioButton" name="radioWith">
+                     <property name="text">
+                      <string>WC</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QRadioButton" name="radioWithout">
+                     <property name="text">
+                      <string>WOC</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
                </layout>
               </widget>
              </item>
-             <item row="3" column="0">
-              <layout class="QHBoxLayout" name="horizontalLayout_4">
-               <item>
+             <item row="4" column="0">
+              <widget class="QWidget" name="widget_5" native="true">
+               <layout class="QHBoxLayout" name="horizontalLayout_2">
+                <item>
+                 <widget class="QRadioButton" name="radioSlower">
+                  <property name="text">
+                   <string>Slower</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="radioSame">
+                  <property name="text">
+                   <string>Same</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="radioFaster">
+                  <property name="text">
+                   <string>Faster</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="6" column="0">
+              <layout class="QGridLayout" name="gridLayout_13">
+               <item row="0" column="0">
                 <widget class="QLabel" name="label_12">
                  <property name="text">
-                  <string>목표 속도</string>
+                  <string>Target
+Velocity</string>
                  </property>
                 </widget>
                </item>
-               <item>
+               <item row="0" column="1">
                 <widget class="QSpinBox" name="velocityBox">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -668,7 +741,7 @@
                   </font>
                  </property>
                  <property name="minimum">
-                  <number>20</number>
+                  <number>15</number>
                  </property>
                  <property name="maximum">
                   <number>80</number>
@@ -677,11 +750,11 @@
                   <number>5</number>
                  </property>
                  <property name="value">
-                  <number>20</number>
+                  <number>30</number>
                  </property>
                 </widget>
                </item>
-               <item>
+               <item row="0" column="2" rowspan="2">
                 <widget class="QPushButton" name="setButton">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -692,7 +765,7 @@
                  <property name="font">
                   <font>
                    <family>Manjari</family>
-                   <pointsize>20</pointsize>
+                   <pointsize>14</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
@@ -703,6 +776,36 @@
                  </property>
                  <property name="shortcut">
                   <string>W</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item row="7" column="0">
+              <widget class="QLabel" name="testCase">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Meera</family>
+                 <pointsize>14</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Scenario : </string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <layout class="QVBoxLayout" name="verticalLayout_3">
+               <item>
+                <widget class="QPushButton" name="newButton">
+                 <property name="text">
+                  <string>New</string>
                  </property>
                 </widget>
                </item>
@@ -750,7 +853,7 @@
          </property>
          <widget class="QWidget" name="tab_3">
           <attribute name="title">
-           <string>상태 메시지</string>
+           <string>State</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_6">
            <item row="0" column="0">
@@ -778,7 +881,7 @@
 					background-color: white;}</string>
                </property>
                <property name="text">
-                <string>상대 차</string>
+                <string>Other</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
@@ -847,7 +950,7 @@
 					background-color: white;}</string>
                </property>
                <property name="text">
-                <string>내 차</string>
+                <string>Me</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
@@ -924,38 +1027,9 @@
          </property>
          <widget class="QWidget" name="tab_5">
           <attribute name="title">
-           <string>카메라</string>
+           <string>Camera</string>
           </attribute>
-          <layout class="QGridLayout" name="gridLayout_4">
-           <item row="0" column="0">
-            <widget class="QLabel" name="cameraLabel">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>16777215</width>
-               <height>300</height>
-              </size>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <layout class="QGridLayout" name="gridLayout_4"/>
          </widget>
         </widget>
        </item>
@@ -994,7 +1068,7 @@
 color: rgb(243, 243, 243);</string>
               </property>
               <property name="text">
-               <string>  통신 대기  </string>
+               <string>  Wait  </string>
               </property>
              </widget>
             </item>
@@ -1020,7 +1094,7 @@ color: rgb(243, 243, 243);</string>
                </sizepolicy>
               </property>
               <property name="text">
-               <string>통신 누적 시간</string>
+               <string>Comulative Time</string>
               </property>
              </widget>
             </item>
@@ -1053,7 +1127,7 @@ color: rgb(243, 243, 243);</string>
                </sizepolicy>
               </property>
               <property name="text">
-               <string>상대 차간 거리</string>
+               <string>Distance</string>
               </property>
              </widget>
             </item>
@@ -1124,7 +1198,7 @@ color: rgb(243, 243, 243);</string>
            </sizepolicy>
           </property>
           <attribute name="title">
-           <string>지도, 차량 위치, 경로, 장애물</string>
+           <string>Map</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_5">
            <item>
@@ -1176,7 +1250,7 @@ color: rgb(243, 243, 243);</string>
          </property>
          <widget class="QWidget" name="tab_6">
           <attribute name="title">
-           <string>협력 속도 조정</string>
+           <string>Velocity</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
@@ -1190,7 +1264,7 @@ color: rgb(243, 243, 243);</string>
                 </sizepolicy>
                </property>
                <property name="text">
-                <string>내 차</string>
+                <string>Me</string>
                </property>
               </widget>
              </item>
@@ -1224,7 +1298,7 @@ color: rgb(243, 243, 243);</string>
                 </sizepolicy>
                </property>
                <property name="text">
-                <string>상대 차</string>
+                <string>Other</string>
                </property>
               </widget>
              </item>
@@ -1296,7 +1370,7 @@ color: rgb(243, 243, 243);</string>
            <string notr="true">background-color: rgb(238, 238, 236);</string>
           </property>
           <attribute name="title">
-           <string>통신 성능</string>
+           <string>Communication Performance</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_8">
            <item>
@@ -1374,7 +1448,7 @@ color: rgb(243, 243, 243);</string>
                  </font>
                 </property>
                 <property name="text">
-                 <string>패킷 왕복 시간 (ms)</string>
+                 <string>Rount Trip Time (ms)</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignCenter</set>
@@ -1441,7 +1515,7 @@ color: rgb(243, 243, 243);</string>
                  </font>
                 </property>
                 <property name="text">
-                 <string>지연 (ms)</string>
+                 <string>Delay (ms)</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignCenter</set>
@@ -1508,7 +1582,7 @@ color: rgb(243, 243, 243);</string>
                  </font>
                 </property>
                 <property name="text">
-                 <string>패킷 크기 (byte)</string>
+                 <string>Packet Size (byte)</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignCenter</set>
@@ -1575,7 +1649,7 @@ color: rgb(243, 243, 243);</string>
                  </font>
                 </property>
                 <property name="text">
-                 <string>패킷 수신률 (%)</string>
+                 <string>Packet Recive Rate (%)</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignCenter</set>

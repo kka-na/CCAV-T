@@ -1,0 +1,36 @@
+[2025-10-30 23:29:53.830] [target][WC][Scenario:3] Lane change REQUESTED at 1761834593.83s (signal: 1)
+[2025-10-30 23:29:53.836] [target][WC][Scenario:3] Lane change STARTED at 1761834593.84s
+[2025-10-30 23:29:53.836] [target][WC][Scenario:3] === LANE CHANGE DELAY: 0.006s ===
+[2025-10-30 23:29:53.884] [ego][WC][Scenario:3] Lane change REQUESTED at 1761834593.88s (signal: 2)
+[2025-10-30 23:29:53.890] [ego][WC][Scenario:3] Lane change STARTED at 1761834593.89s
+[2025-10-30 23:29:53.890] [ego][WC][Scenario:3] === LANE CHANGE DELAY: 0.007s ===
+[2025-10-30 23:29:55.785] [target][WC][Scenario:3] Lane change COMPLETED. Total delay was 0.006s
+---
+[2025-10-30 23:30:57.358] [target][WOC][Scenario:3] Lane change REQUESTED at 1761834657.36s (signal: 1)
+[2025-10-30 23:30:57.364] [target][WOC][Scenario:3] Lane change STARTED at 1761834657.36s
+[2025-10-30 23:30:57.364] [target][WOC][Scenario:3] === LANE CHANGE DELAY: 0.005s ===
+[2025-10-30 23:30:57.407] [ego][WOC][Scenario:3] Lane change REQUESTED at 1761834657.41s (signal: 2)
+[2025-10-30 23:30:57.863] [ego][WOC][Scenario:3] Lane change STARTED at 1761834657.86s
+[2025-10-30 23:30:57.863] [ego][WOC][Scenario:3] === LANE CHANGE DELAY: 0.456s ===
+[2025-10-30 23:30:59.371] [target][WOC][Scenario:3] Lane change COMPLETED. Total delay was 0.005s
+---
+[2025-10-30 23:31:01.514] [ego][WOC][Scenario:3] Lane change COMPLETED. Total delay was 0.456s
+---
+[2025-10-30 23:53:14.652] [ego][WC][Scenario:7] Lane change REQUESTED at 1761835994.65s (signal: 2)
+[2025-10-30 23:53:14.659] [ego][WC][Scenario:7] Lane change STARTED at 1761835994.66s
+[2025-10-30 23:53:14.659] [ego][WC][Scenario:7] === LANE CHANGE DELAY: 0.007s ===
+[2025-10-31 03:34:43.902] [ego][WC][Scenario:0] Lane change REQUESTED at 1761849283.90s (signal: 2)
+[2025-10-31 03:34:43.904] [ego][WC][Scenario:0] Lane change STARTED at 1761849283.90s
+[2025-10-31 03:34:43.904] [ego][WC][Scenario:0] === LANE CHANGE DELAY: 0.003s ===
+[2025-10-31 03:35:21.560] [ego][WOC][Scenario:3] Lane change COMPLETED. Total delay was 0.003s
+---
+[2025-10-31 03:35:41.818] [target][WOC][Scenario:3] Lane change REQUESTED at 1761849341.82s (signal: 1)
+[2025-10-31 03:35:41.828] [target][WOC][Scenario:3] Lane change STARTED at 1761849341.83s
+[2025-10-31 03:35:41.828] [target][WOC][Scenario:3] === LANE CHANGE DELAY: 0.010s ===
+[2025-10-31 03:35:41.852] [ego][WOC][Scenario:3] Lane change REQUESTED at 1761849341.85s (signal: 2)
+[2025-10-31 03:35:42.310] [ego][WOC][Scenario:3] Lane change STARTED at 1761849342.31s
+[2025-10-31 03:35:42.310] [ego][WOC][Scenario:3] === LANE CHANGE DELAY: 0.458s ===
+[2025-10-31 03:35:43.822] [target][WOC][Scenario:3] Lane change COMPLETED. Total delay was 0.010s
+---
+[2025-10-31 03:35:46.356] [ego][WOC][Scenario:3] Lane change COMPLETED. Total delay was 0.458s
+---

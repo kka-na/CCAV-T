@@ -2,7 +2,7 @@
 import rospy
 
 from ccavt.msg import *
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray, String
 from visualization_msgs.msg import Marker
 class ROSManager:
     def __init__(self, type):
@@ -15,12 +15,14 @@ class ROSManager:
         self.car = {'state':0, 'x': 0, 'y':0,'t':0,'v':0}
         self.local_path = []
         self.target_velocity = 0
-        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 0, 'scenario':0}
+        self.user_input = {'state': 0, 'signal': 0, 'target_velocity': 0, 'scenario':0, 'test_mode': 'same', 'with_coop': True}
         rospy.loginfo("Selfsdriving set")
 
     def set_protocol(self):
         rospy.Subscriber(f'/{self.type}/EgoShareInfo', ShareInfo, self.ego_share_info_cb)
         rospy.Subscriber(f'/{self.type}/user_input',Float32MultiArray, self.user_input_cb)
+        rospy.Subscriber(f'/{self.type}/test_mode', String, self.test_mode_cb)
+        rospy.Subscriber(f'/{self.type}/with_coop', String, self.with_coop_cb)
         self.lh_test_pub = rospy.Publisher(f'{self.type}/look_a_head', Marker, queue_size=1)
 
     def ego_share_info_cb(self, msg):
@@ -39,6 +41,12 @@ class ROSManager:
         self.user_input['state'] = int(msg.data[0])
         self.user_input['signal'] = int(msg.data[1])
         self.user_input['scenario'] = int(msg.data[3])
+
+    def test_mode_cb(self, msg):
+        self.user_input['test_mode'] = msg.data
+
+    def with_coop_cb(self, msg):
+        self.user_input['with_coop'] = (msg.data == 'true')
 
     def pub_lh(self, lh):
         marker = Marker()

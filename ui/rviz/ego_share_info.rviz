@@ -5,7 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded: ~
       Splitter Ratio: 0.42505592107772827
-    Tree Height: 371
+    Tree Height: 834
   - Class: rviz/Views
     Expanded:
       - /Current View1
@@ -39,9 +39,7 @@ Visualization Manager:
       Marker Topic: /ego/visualizer/ego_obstacles
       Name: Ego Obstacles
       Namespaces:
-        2000: true
-        2001: true
-        object: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -57,7 +55,7 @@ Visualization Manager:
       Marker Topic: /ego/visualizer/local_target_path
       Name: Target Path
       Namespaces:
-        {}
+        path: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -65,7 +63,7 @@ Visualization Manager:
       Marker Topic: /ego/visualizer/target_car
       Name: Target Marker
       Namespaces:
-        {}
+        target_car_marker: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -73,7 +71,7 @@ Visualization Manager:
       Marker Topic: /ego/visualizer/target_car_info
       Name: Target Info
       Namespaces:
-        {}
+        target_car_info: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -93,175 +91,22 @@ Visualization Manager:
         for_viz_1: true
         for_viz_10: true
         for_viz_100: true
-        for_viz_1000: true
-        for_viz_1001: true
-        for_viz_1002: true
-        for_viz_1003: true
-        for_viz_1004: true
-        for_viz_1005: true
-        for_viz_1006: true
-        for_viz_1007: true
-        for_viz_1008: true
-        for_viz_1009: true
         for_viz_101: true
-        for_viz_1010: true
-        for_viz_1011: true
-        for_viz_1012: true
-        for_viz_1013: true
-        for_viz_1014: true
-        for_viz_1015: true
-        for_viz_1016: true
-        for_viz_1017: true
-        for_viz_1018: true
-        for_viz_1019: true
         for_viz_102: true
-        for_viz_1020: true
-        for_viz_1021: true
-        for_viz_1022: true
-        for_viz_1023: true
-        for_viz_1024: true
-        for_viz_1025: true
-        for_viz_1026: true
-        for_viz_1027: true
-        for_viz_1028: true
-        for_viz_1029: true
         for_viz_103: true
-        for_viz_1030: true
-        for_viz_1031: true
-        for_viz_1032: true
-        for_viz_1033: true
-        for_viz_1034: true
-        for_viz_1035: true
-        for_viz_1036: true
-        for_viz_1037: true
-        for_viz_1038: true
-        for_viz_1039: true
         for_viz_104: true
-        for_viz_1040: true
-        for_viz_1041: true
-        for_viz_1042: true
-        for_viz_1043: true
-        for_viz_1044: true
-        for_viz_1045: true
-        for_viz_1046: true
-        for_viz_1047: true
-        for_viz_1048: true
-        for_viz_1049: true
         for_viz_105: true
-        for_viz_1050: true
-        for_viz_1051: true
-        for_viz_1052: true
-        for_viz_1053: true
-        for_viz_1054: true
-        for_viz_1055: true
-        for_viz_1056: true
-        for_viz_1057: true
-        for_viz_1058: true
-        for_viz_1059: true
         for_viz_106: true
-        for_viz_1060: true
-        for_viz_1061: true
-        for_viz_1062: true
-        for_viz_1063: true
-        for_viz_1064: true
-        for_viz_1065: true
-        for_viz_1066: true
-        for_viz_1067: true
-        for_viz_1068: true
-        for_viz_1069: true
         for_viz_107: true
-        for_viz_1070: true
-        for_viz_1071: true
-        for_viz_1072: true
-        for_viz_1073: true
-        for_viz_1074: true
-        for_viz_1075: true
-        for_viz_1076: true
-        for_viz_1077: true
-        for_viz_1078: true
-        for_viz_1079: true
         for_viz_108: true
-        for_viz_1080: true
-        for_viz_1081: true
-        for_viz_1082: true
-        for_viz_1083: true
-        for_viz_1084: true
-        for_viz_1085: true
-        for_viz_1086: true
-        for_viz_1087: true
-        for_viz_1088: true
-        for_viz_1089: true
         for_viz_109: true
-        for_viz_1090: true
-        for_viz_1091: true
-        for_viz_1092: true
-        for_viz_1093: true
-        for_viz_1094: true
-        for_viz_1095: true
-        for_viz_1096: true
-        for_viz_1097: true
-        for_viz_1098: true
-        for_viz_1099: true
         for_viz_11: true
         for_viz_110: true
-        for_viz_1100: true
-        for_viz_1101: true
-        for_viz_1102: true
-        for_viz_1103: true
-        for_viz_1104: true
-        for_viz_1105: true
-        for_viz_1106: true
-        for_viz_1107: true
-        for_viz_1108: true
-        for_viz_1109: true
         for_viz_111: true
-        for_viz_1110: true
-        for_viz_1111: true
-        for_viz_1112: true
-        for_viz_1113: true
-        for_viz_1114: true
-        for_viz_1115: true
-        for_viz_1116: true
-        for_viz_1117: true
-        for_viz_1118: true
-        for_viz_1119: true
         for_viz_112: true
-        for_viz_1120: true
-        for_viz_1121: true
-        for_viz_1122: true
-        for_viz_1123: true
-        for_viz_1124: true
-        for_viz_1125: true
-        for_viz_1126: true
-        for_viz_1127: true
-        for_viz_1128: true
-        for_viz_1129: true
         for_viz_113: true
-        for_viz_1130: true
-        for_viz_1131: true
-        for_viz_1132: true
-        for_viz_1133: true
-        for_viz_1134: true
-        for_viz_1135: true
-        for_viz_1136: true
-        for_viz_1137: true
-        for_viz_1138: true
-        for_viz_1139: true
         for_viz_114: true
-        for_viz_1140: true
-        for_viz_1141: true
-        for_viz_1142: true
-        for_viz_1143: true
-        for_viz_1144: true
-        for_viz_1145: true
-        for_viz_1146: true
-        for_viz_1147: true
-        for_viz_1148: true
-        for_viz_1149: true
         for_viz_115: true
-        for_viz_1150: true
-        for_viz_1151: true
-        for_viz_1152: true
         for_viz_116: true
         for_viz_117: true
         for_viz_118: true
@@ -1205,43 +1050,9 @@ Visualization Manager:
         for_viz_963: true
         for_viz_964: true
         for_viz_965: true
-        for_viz_966: true
-        for_viz_967: true
-        for_viz_968: true
-        for_viz_969: true
         for_viz_97: true
-        for_viz_970: true
-        for_viz_971: true
-        for_viz_972: true
-        for_viz_973: true
-        for_viz_974: true
-        for_viz_975: true
-        for_viz_976: true
-        for_viz_977: true
-        for_viz_978: true
-        for_viz_979: true
         for_viz_98: true
-        for_viz_980: true
-        for_viz_981: true
-        for_viz_982: true
-        for_viz_983: true
-        for_viz_984: true
-        for_viz_985: true
-        for_viz_986: true
-        for_viz_987: true
-        for_viz_988: true
-        for_viz_989: true
         for_viz_99: true
-        for_viz_990: true
-        for_viz_991: true
-        for_viz_992: true
-        for_viz_993: true
-        for_viz_994: true
-        for_viz_995: true
-        for_viz_996: true
-        for_viz_997: true
-        for_viz_998: true
-        for_viz_999: true
         leftBound_0: true
         leftBound_1: true
         leftBound_100: true
@@ -1616,32 +1427,28 @@ Visualization Manager:
         leftBound_499: true
         leftBound_5: true
         leftBound_501: true
-        leftBound_502: true
+        leftBound_505: true
+        leftBound_506: true
         leftBound_507: true
-        leftBound_508: true
-        leftBound_509: true
+        leftBound_511: true
         leftBound_514: true
         leftBound_515: true
+        leftBound_516: true
+        leftBound_517: true
         leftBound_518: true
         leftBound_519: true
         leftBound_52: true
-        leftBound_520: true
-        leftBound_521: true
-        leftBound_522: true
-        leftBound_523: true
-        leftBound_524: true
         leftBound_525: true
         leftBound_526: true
-        leftBound_527: true
         leftBound_528: true
         leftBound_529: true
-        leftBound_530: true
         leftBound_531: true
         leftBound_532: true
-        leftBound_533: true
         leftBound_534: true
         leftBound_535: true
         leftBound_536: true
+        leftBound_537: true
+        leftBound_538: true
         leftBound_539: true
         leftBound_540: true
         leftBound_541: true
@@ -1649,54 +1456,39 @@ Visualization Manager:
         leftBound_543: true
         leftBound_544: true
         leftBound_545: true
-        leftBound_546: true
         leftBound_547: true
-        leftBound_548: true
+        leftBound_549: true
         leftBound_55: true
+        leftBound_550: true
         leftBound_551: true
         leftBound_552: true
+        leftBound_553: true
         leftBound_554: true
+        leftBound_555: true
+        leftBound_556: true
+        leftBound_557: true
+        leftBound_558: true
+        leftBound_559: true
+        leftBound_560: true
         leftBound_561: true
-        leftBound_562: true
-        leftBound_563: true
-        leftBound_564: true
-        leftBound_565: true
-        leftBound_566: true
-        leftBound_568: true
-        leftBound_569: true
+        leftBound_567: true
         leftBound_57: true
         leftBound_570: true
-        leftBound_571: true
-        leftBound_573: true
-        leftBound_574: true
+        leftBound_572: true
         leftBound_575: true
         leftBound_576: true
-        leftBound_577: true
         leftBound_578: true
-        leftBound_579: true
         leftBound_58: true
-        leftBound_580: true
-        leftBound_581: true
         leftBound_583: true
-        leftBound_585: true
-        leftBound_586: true
-        leftBound_587: true
+        leftBound_584: true
+        leftBound_589: true
         leftBound_59: true
-        leftBound_591: true
-        leftBound_592: true
-        leftBound_594: true
-        leftBound_595: true
-        leftBound_596: true
-        leftBound_598: true
-        leftBound_599: true
+        leftBound_593: true
+        leftBound_597: true
         leftBound_6: true
         leftBound_60: true
-        leftBound_600: true
         leftBound_601: true
-        leftBound_602: true
         leftBound_603: true
-        leftBound_604: true
-        leftBound_605: true
         leftBound_606: true
         leftBound_607: true
         leftBound_608: true
@@ -1704,7 +1496,6 @@ Visualization Manager:
         leftBound_61: true
         leftBound_610: true
         leftBound_611: true
-        leftBound_612: true
         leftBound_613: true
         leftBound_614: true
         leftBound_615: true
@@ -1725,17 +1516,22 @@ Visualization Manager:
         leftBound_629: true
         leftBound_63: true
         leftBound_630: true
+        leftBound_631: true
+        leftBound_632: true
         leftBound_633: true
         leftBound_634: true
+        leftBound_635: true
         leftBound_636: true
         leftBound_637: true
         leftBound_638: true
         leftBound_639: true
         leftBound_64: true
         leftBound_640: true
+        leftBound_641: true
         leftBound_642: true
         leftBound_643: true
         leftBound_644: true
+        leftBound_645: true
         leftBound_646: true
         leftBound_647: true
         leftBound_648: true
@@ -1750,8 +1546,10 @@ Visualization Manager:
         leftBound_656: true
         leftBound_657: true
         leftBound_658: true
+        leftBound_659: true
         leftBound_66: true
         leftBound_660: true
+        leftBound_661: true
         leftBound_662: true
         leftBound_663: true
         leftBound_664: true
@@ -1770,6 +1568,7 @@ Visualization Manager:
         leftBound_676: true
         leftBound_677: true
         leftBound_678: true
+        leftBound_679: true
         leftBound_68: true
         leftBound_680: true
         leftBound_681: true
@@ -1778,137 +1577,22 @@ Visualization Manager:
         leftBound_684: true
         leftBound_685: true
         leftBound_686: true
+        leftBound_687: true
         leftBound_688: true
         leftBound_689: true
         leftBound_69: true
-        leftBound_691: true
-        leftBound_693: true
-        leftBound_695: true
-        leftBound_696: true
-        leftBound_697: true
-        leftBound_698: true
-        leftBound_699: true
+        leftBound_690: true
         leftBound_7: true
         leftBound_70: true
-        leftBound_700: true
-        leftBound_701: true
-        leftBound_702: true
-        leftBound_703: true
-        leftBound_704: true
-        leftBound_705: true
-        leftBound_706: true
-        leftBound_707: true
-        leftBound_708: true
-        leftBound_709: true
-        leftBound_710: true
-        leftBound_711: true
-        leftBound_712: true
-        leftBound_718: true
         leftBound_72: true
-        leftBound_721: true
-        leftBound_723: true
-        leftBound_726: true
-        leftBound_727: true
-        leftBound_729: true
         leftBound_73: true
-        leftBound_734: true
-        leftBound_735: true
         leftBound_74: true
-        leftBound_740: true
-        leftBound_744: true
-        leftBound_748: true
         leftBound_75: true
-        leftBound_752: true
-        leftBound_754: true
-        leftBound_757: true
-        leftBound_758: true
-        leftBound_759: true
-        leftBound_760: true
-        leftBound_761: true
-        leftBound_762: true
-        leftBound_764: true
-        leftBound_765: true
-        leftBound_766: true
-        leftBound_767: true
-        leftBound_768: true
-        leftBound_769: true
-        leftBound_770: true
-        leftBound_771: true
-        leftBound_772: true
-        leftBound_773: true
-        leftBound_774: true
-        leftBound_775: true
-        leftBound_776: true
-        leftBound_777: true
-        leftBound_778: true
-        leftBound_779: true
         leftBound_78: true
-        leftBound_780: true
-        leftBound_781: true
-        leftBound_782: true
-        leftBound_783: true
-        leftBound_784: true
-        leftBound_785: true
-        leftBound_786: true
-        leftBound_787: true
-        leftBound_788: true
-        leftBound_789: true
-        leftBound_790: true
-        leftBound_791: true
-        leftBound_792: true
-        leftBound_793: true
-        leftBound_794: true
-        leftBound_795: true
-        leftBound_796: true
-        leftBound_797: true
-        leftBound_798: true
-        leftBound_799: true
         leftBound_8: true
         leftBound_80: true
-        leftBound_800: true
-        leftBound_801: true
-        leftBound_802: true
-        leftBound_803: true
-        leftBound_804: true
-        leftBound_805: true
-        leftBound_806: true
-        leftBound_807: true
-        leftBound_808: true
-        leftBound_809: true
         leftBound_81: true
-        leftBound_810: true
-        leftBound_811: true
-        leftBound_812: true
-        leftBound_813: true
-        leftBound_814: true
-        leftBound_815: true
-        leftBound_816: true
-        leftBound_817: true
-        leftBound_818: true
-        leftBound_819: true
         leftBound_82: true
-        leftBound_820: true
-        leftBound_821: true
-        leftBound_822: true
-        leftBound_823: true
-        leftBound_824: true
-        leftBound_825: true
-        leftBound_826: true
-        leftBound_827: true
-        leftBound_828: true
-        leftBound_829: true
-        leftBound_830: true
-        leftBound_831: true
-        leftBound_832: true
-        leftBound_833: true
-        leftBound_834: true
-        leftBound_835: true
-        leftBound_836: true
-        leftBound_837: true
-        leftBound_838: true
-        leftBound_839: true
-        leftBound_840: true
-        leftBound_841: true
         leftBound_86: true
         leftBound_87: true
         leftBound_89: true
@@ -2297,88 +1981,69 @@ Visualization Manager:
         rightBound_499: true
         rightBound_5: true
         rightBound_500: true
-        rightBound_502: true
+        rightBound_504: true
         rightBound_505: true
+        rightBound_506: true
         rightBound_507: true
-        rightBound_508: true
         rightBound_509: true
         rightBound_51: true
+        rightBound_510: true
         rightBound_511: true
-        rightBound_512: true
         rightBound_513: true
         rightBound_514: true
+        rightBound_515: true
+        rightBound_516: true
         rightBound_517: true
         rightBound_518: true
         rightBound_519: true
         rightBound_520: true
-        rightBound_521: true
-        rightBound_522: true
-        rightBound_523: true
-        rightBound_524: true
         rightBound_525: true
-        rightBound_526: true
         rightBound_527: true
-        rightBound_528: true
-        rightBound_529: true
-        rightBound_530: true
         rightBound_531: true
-        rightBound_532: true
         rightBound_533: true
         rightBound_534: true
         rightBound_535: true
+        rightBound_536: true
+        rightBound_537: true
         rightBound_538: true
         rightBound_539: true
         rightBound_54: true
         rightBound_540: true
         rightBound_541: true
-        rightBound_542: true
         rightBound_543: true
         rightBound_544: true
         rightBound_545: true
         rightBound_546: true
-        rightBound_547: true
-        rightBound_548: true
-        rightBound_550: true
+        rightBound_549: true
         rightBound_551: true
         rightBound_552: true
         rightBound_553: true
         rightBound_554: true
+        rightBound_555: true
+        rightBound_556: true
+        rightBound_557: true
+        rightBound_558: true
+        rightBound_559: true
         rightBound_56: true
+        rightBound_560: true
         rightBound_561: true
-        rightBound_562: true
-        rightBound_563: true
-        rightBound_564: true
-        rightBound_565: true
-        rightBound_567: true
         rightBound_568: true
         rightBound_569: true
         rightBound_57: true
-        rightBound_570: true
         rightBound_571: true
-        rightBound_572: true
-        rightBound_573: true
         rightBound_574: true
-        rightBound_575: true
-        rightBound_576: true
-        rightBound_577: true
         rightBound_578: true
-        rightBound_579: true
         rightBound_58: true
-        rightBound_580: true
         rightBound_582: true
+        rightBound_583: true
         rightBound_584: true
         rightBound_586: true
-        rightBound_590: true
-        rightBound_591: true
+        rightBound_588: true
+        rightBound_592: true
         rightBound_593: true
-        rightBound_598: true
-        rightBound_599: true
+        rightBound_596: true
         rightBound_6: true
         rightBound_600: true
-        rightBound_601: true
-        rightBound_602: true
-        rightBound_603: true
-        rightBound_604: true
         rightBound_605: true
         rightBound_606: true
         rightBound_607: true
@@ -2387,16 +2052,17 @@ Visualization Manager:
         rightBound_61: true
         rightBound_610: true
         rightBound_611: true
-        rightBound_612: true
         rightBound_613: true
         rightBound_614: true
         rightBound_615: true
+        rightBound_616: true
         rightBound_617: true
         rightBound_618: true
         rightBound_619: true
         rightBound_62: true
         rightBound_620: true
         rightBound_621: true
+        rightBound_622: true
         rightBound_623: true
         rightBound_624: true
         rightBound_625: true
@@ -2406,6 +2072,8 @@ Visualization Manager:
         rightBound_629: true
         rightBound_63: true
         rightBound_630: true
+        rightBound_631: true
+        rightBound_632: true
         rightBound_633: true
         rightBound_634: true
         rightBound_635: true
@@ -2414,10 +2082,11 @@ Visualization Manager:
         rightBound_638: true
         rightBound_639: true
         rightBound_64: true
+        rightBound_640: true
+        rightBound_641: true
         rightBound_642: true
         rightBound_643: true
         rightBound_644: true
-        rightBound_645: true
         rightBound_646: true
         rightBound_647: true
         rightBound_648: true
@@ -2428,14 +2097,18 @@ Visualization Manager:
         rightBound_652: true
         rightBound_653: true
         rightBound_654: true
+        rightBound_655: true
         rightBound_656: true
         rightBound_657: true
         rightBound_658: true
         rightBound_659: true
         rightBound_66: true
+        rightBound_660: true
+        rightBound_661: true
         rightBound_662: true
         rightBound_663: true
         rightBound_664: true
+        rightBound_665: true
         rightBound_666: true
         rightBound_667: true
         rightBound_668: true
@@ -2450,144 +2123,30 @@ Visualization Manager:
         rightBound_676: true
         rightBound_677: true
         rightBound_678: true
+        rightBound_679: true
         rightBound_68: true
         rightBound_680: true
         rightBound_681: true
-        rightBound_682: true
         rightBound_683: true
         rightBound_684: true
+        rightBound_685: true
         rightBound_686: true
         rightBound_687: true
         rightBound_688: true
+        rightBound_689: true
         rightBound_69: true
         rightBound_690: true
-        rightBound_691: true
-        rightBound_692: true
-        rightBound_695: true
-        rightBound_696: true
-        rightBound_697: true
-        rightBound_698: true
-        rightBound_699: true
         rightBound_7: true
         rightBound_70: true
-        rightBound_700: true
-        rightBound_702: true
-        rightBound_703: true
-        rightBound_704: true
-        rightBound_705: true
-        rightBound_706: true
-        rightBound_707: true
-        rightBound_708: true
-        rightBound_709: true
-        rightBound_710: true
-        rightBound_711: true
-        rightBound_712: true
-        rightBound_719: true
         rightBound_72: true
-        rightBound_720: true
-        rightBound_722: true
-        rightBound_725: true
-        rightBound_729: true
         rightBound_73: true
-        rightBound_733: true
-        rightBound_734: true
-        rightBound_735: true
-        rightBound_737: true
-        rightBound_739: true
         rightBound_74: true
-        rightBound_743: true
-        rightBound_744: true
-        rightBound_747: true
         rightBound_75: true
-        rightBound_751: true
-        rightBound_756: true
-        rightBound_757: true
-        rightBound_758: true
-        rightBound_759: true
-        rightBound_760: true
-        rightBound_761: true
-        rightBound_762: true
-        rightBound_764: true
-        rightBound_765: true
-        rightBound_766: true
-        rightBound_767: true
-        rightBound_768: true
-        rightBound_769: true
-        rightBound_770: true
-        rightBound_771: true
-        rightBound_772: true
-        rightBound_773: true
-        rightBound_774: true
-        rightBound_775: true
-        rightBound_776: true
-        rightBound_777: true
-        rightBound_778: true
-        rightBound_779: true
-        rightBound_780: true
-        rightBound_781: true
-        rightBound_782: true
-        rightBound_783: true
-        rightBound_784: true
-        rightBound_785: true
-        rightBound_786: true
-        rightBound_787: true
-        rightBound_788: true
-        rightBound_789: true
         rightBound_79: true
-        rightBound_790: true
-        rightBound_791: true
-        rightBound_792: true
-        rightBound_793: true
-        rightBound_794: true
-        rightBound_795: true
-        rightBound_797: true
-        rightBound_798: true
-        rightBound_799: true
         rightBound_8: true
         rightBound_80: true
-        rightBound_800: true
-        rightBound_801: true
-        rightBound_802: true
-        rightBound_803: true
-        rightBound_804: true
-        rightBound_805: true
-        rightBound_806: true
-        rightBound_807: true
-        rightBound_808: true
-        rightBound_809: true
         rightBound_81: true
-        rightBound_810: true
-        rightBound_811: true
-        rightBound_812: true
-        rightBound_813: true
-        rightBound_814: true
-        rightBound_815: true
-        rightBound_816: true
-        rightBound_817: true
-        rightBound_818: true
-        rightBound_819: true
         rightBound_82: true
-        rightBound_820: true
-        rightBound_821: true
-        rightBound_822: true
-        rightBound_823: true
-        rightBound_824: true
-        rightBound_825: true
-        rightBound_826: true
-        rightBound_827: true
-        rightBound_828: true
-        rightBound_829: true
-        rightBound_830: true
-        rightBound_831: true
-        rightBound_832: true
-        rightBound_834: true
-        rightBound_835: true
-        rightBound_836: true
-        rightBound_837: true
-        rightBound_838: true
-        rightBound_839: true
-        rightBound_840: true
-        rightBound_841: true
         rightBound_85: true
         rightBound_86: true
         rightBound_87: true
@@ -2611,7 +2170,7 @@ Visualization Manager:
       Marker Topic: /ego/look_a_head
       Name: Look a Head
       Namespaces:
-        {}
+        lookahead: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -2619,7 +2178,23 @@ Visualization Manager:
       Marker Topic: /ego/plot_point
       Name: Plot Point
       Namespaces:
-        intersection: true
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /ego/bsd_zone
+      Name: BSD Zone
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /endpoints
+      Name: End Point
+      Namespaces:
+        endpoints: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -2650,7 +2225,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 29.317699432373047
+      Distance: 57.867942810058594
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -2658,8 +2233,8 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -13.09488582611084
-        Y: 2.668337345123291
+        X: -16.870033264160156
+        Y: 3.1852357387542725
         Z: 1.9950621208408847e-06
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
@@ -2676,7 +2251,7 @@ Window Geometry:
   Height: 1016
   Hide Left Dock: true
   Hide Right Dock: true
-  QMainWindow State: 000000ff00000000fd0000000400000000000001c10000039efc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000000000000000fb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073000000003d0000039e000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000100044006900730070006c0061007900730000000016000001c10000000000000000000000010000010f0000039efc0200000004fb0000000a00560069006500770073000000003d0000039e000000a400fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000035a0000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004180000003efc0100000002fb0000000800540069006d00650000000000000004180000000000000000fb0000000800540069006d0065010000000000000450000000000000000000000744000003c500000004000000040000000800000008fc000000030000000000000000000000020000000000000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001c1000003c5fc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000000000000000fb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730000000016000003c5000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000100044006900730070006c0061007900730000000016000001c10000000000000000000000010000010f0000039efc0200000004fb0000000a00560069006500770073000000003d0000039e000000a400fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000035a0000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004180000003efc0100000002fb0000000800540069006d00650000000000000004180000000000000000fb0000000800540069006d0065010000000000000450000000000000000000000744000003c500000004000000040000000800000008fc000000030000000000000000000000020000000000000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
   Views:
     collapsed: true
   Width: 1860

@@ -76,7 +76,8 @@ class SocketHandler:
         self.out_of_order_count = 0
         self.duplicate_count = 0
         self.missing_count = 0
-        
+        self.logging_enabled = False
+
         self.set_logger(type)
 
     def set_logger(self, type):
@@ -94,11 +95,21 @@ class SocketHandler:
         console_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
 
+    def start_logging(self, test_case):
+        """로깅 시작 및 test_case 기록"""
+        if not self.logging_enabled:
+            self.logging_enabled = True
+            self.logger.info(f"========== Logging Started ==========")
+            self.logger.info(f"Test Case: {test_case}")
+            self.logger.info(f"=====================================\n")
+
     def _async_logger(self):
         """비동기 로깅 워커 스레드"""
         while True:
             try:
                 log_type, tx_cnt, message = self._log_queue.get(timeout=1)
+                if not self.logging_enabled:
+                    continue
                 if log_type == 'tx':
                     self.logger.info(f"Tx cnt:{tx_cnt}\n{message}")
                 elif log_type == 'rx':
@@ -174,7 +185,7 @@ class SocketHandler:
 
             valid_obstacles = []
             for i, obs in enumerate(obstacles):
-                if len(obs) >= 7:
+                if len(obs) >= 8:
                     try:
                         cls = int(obs[0])
                         enu_x = float(obs[1])
@@ -183,11 +194,12 @@ class SocketHandler:
                         velocity = float(obs[4])
                         distance = float(obs[5])
                         dangerous = int(obs[6])
+                        lidar_delay = float(obs[7])
 
-                        if any(not math.isfinite(val) for val in [enu_x, enu_y, heading, velocity, distance]):
+                        if any(not math.isfinite(val) for val in [enu_x, enu_y, heading, velocity, distance, lidar_delay]):
                             continue
 
-                        valid_obstacles.append([cls, enu_x, enu_y, heading, velocity, distance, dangerous])
+                        valid_obstacles.append([cls, enu_x, enu_y, heading, velocity, distance, dangerous, lidar_delay])
                     except (ValueError, TypeError):
                         continue
 
@@ -255,6 +267,7 @@ class SocketHandler:
                         obstacle.contents.velocity = float(obj[4])
                         obstacle.contents.distance = float(obj[5])
                         obstacle.contents.dangerous = int(obj[6])
+                        obstacle.contents.lidar_delay = float(obj[7])
                     except Exception as e:
                         self.logger.error(f"Error setting obstacle {o}: {e}")
                         return -1
@@ -704,7 +717,7 @@ class SocketHandler:
         vehicle_obstacles = []
         for obs in obstacles:
             vehicle_obstacles.append([
-                obs.cls, obs.enu_x, obs.enu_y, obs.heading, obs.velocity, obs.distance, obs.dangerous
+                obs.cls, obs.enu_x, obs.enu_y, obs.heading, obs.velocity, obs.distance, obs.dangerous, obs.lidar_delay
             ])
         return vehicle_state, vehicle_path, vehicle_obstacles
 
@@ -809,7 +822,7 @@ class SocketHandler:
             for i, obs in enumerate(vehicle_obstacles):
                 obstacles_info += (
                     f"[{i}] cls:{obs[0]} x:{obs[1]:.2f} y:{obs[2]:.2f} "
-                    f"h:{obs[3]:.2f} v:{obs[4]:.2f}\n"
+                    f"h:{obs[3]:.2f} v:{obs[4]:.2f} danger:{obs[6]:.2f} lidar_delay:{obs[7]}\n"
                 )
         return state + path + obstacle_number + obstacles_info
 

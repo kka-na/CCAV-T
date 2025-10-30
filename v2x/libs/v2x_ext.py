@@ -10,7 +10,8 @@ class ObstacleInformation(Structure):
         ("heading", c_float),
         ("velocity", c_float),
         ("distance", c_float),
-        ("dangerous", c_uint8)
+        ("dangerous", c_uint8),
+        ("lidar_delay", c_float)
     ]
 
 class SharingInformation(Structure):

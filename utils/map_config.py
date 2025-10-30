@@ -14,4 +14,6 @@ def get_base_lla(map):
         base_lla = [35.64750540757964, 128.40264207604886, 7]
     elif map == 'Solbat':
         base_lla = [37.370892294,126.632218057,7]
+    elif map == 'Midan':
+        base_lla = [37.527247,126.5068108,7]
     return base_lla

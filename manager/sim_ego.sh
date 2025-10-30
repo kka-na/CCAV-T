@@ -1,10 +1,10 @@
 #!/bin/bash
 cd ../sharing_info
-python3 main.py ego Midan 0&
+python3 main.py ego Midan 1&
 cd ../ui/visualizer
-python3 visualizer.py ego 0&
+python3 visualizer.py ego 1&
 cd ../
-python3 ui.py ego 0 &
+python3 ui.py ego 1 &
 cd ../selfdriving
 python3 main.py ego simulator Midan &
 cd ../v2x

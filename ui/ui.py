@@ -48,11 +48,25 @@ class MyApp(QMainWindow):
         self.state = 0
         self.sig_in_viz = False
         self.state_list = {'temp': 0, 'prev': 0, 'target':0}
-        self.state_string = ["정상 상황", "좌측 차선 변경 요청", "우측 차선 변경 요청", "직진 초기화",  "합류 시 안전 (허가)", "합류 시 위험 (거절)", "초기화", "긴급 상황 발생"]
+        self.state_string = ["Normal", "Left Lane Change Request", "Right Lane Change Request", "Straight Initialize", "Safe to Merge (Approved)", "Unsafe to Merge (Rejected)", "Initialize", "Emergency"]
         self.signal_buttons = {self.ui.leftButton:1, self.ui.rightButton:2, self.ui.straightButton:3,self.ui.eButton:7}
         self.selfdriving_buttons = [self.ui.stopButton, self.ui.startButton]
-        self.check_map = {self.ui.check1 : 1, self.ui.check2 : 2, self.ui.check3 : 3, self.ui.check4 : 4, self.ui.check5:5, self.ui.check6:6}
-        self.radio_point = {self.ui.radioPlot1: 1, self.ui.radioPlot2: 2, self.ui.radioPlot3: 3,self.ui.radioPlot4: 4, self.ui.radioPlot5: 5, self.ui.radioPlot6: 6}
+        self.check_map = {self.ui.check1 : 1, self.ui.check2 : 2, self.ui.check3 : 3, self.ui.check4 : 4, self.ui.check5:5, self.ui.check6:6, self.ui.check7:7, self.ui.check8:8, self.ui.check9:9, self.ui.check10:10, self.ui.check11:11, self.ui.check12:12}
+
+        # Radio buttons for test mode selection
+        self.radio_test_mode = {
+            self.ui.radioSlower: 'slower',
+            self.ui.radioSame: 'same',
+            self.ui.radioFaster: 'faster'
+        }
+        self.test_mode = 'same'  # Default test mode
+
+        # Radio buttons for V2V cooperation (With/Without Communication)
+        self.radio_with_coop = {
+            self.ui.radioWith: True,   # WC: With Communication
+            self.ui.radioWithout: False  # WOC: Without Communication
+        }
+        self.with_coop = True  # Default: With Communication
 
         self.ego_signal, self.target_signal = 0,0
 
@@ -93,11 +107,17 @@ class MyApp(QMainWindow):
 
     def updateUI(self):
         """이미지를 제외한 UI 요소 업데이트 (빈도 낮음)"""
+        # Endpoint 도달 체크
+        if self.RM.endpoint_reached and self.mode != 'OFF':
+            print(f"[UI] Endpoint reached - triggering stop")
+            self.click_selfdriving(0)  # stopButton 상태로 전환
+            self.RM.endpoint_reached = False  # 플래그 리셋 (중복 실행 방지)
+
         if self.RM.communication_on:
-            self.ui.commOnLabel.setText("  통신 중...  ")
+            self.ui.commOnLabel.setText("  Communicating...  ")
             self.ui.commOnLabel.setStyleSheet("QLabel {background-color: #31d45c; color: rgb(243, 243, 243);}")
         else:
-            self.ui.commOnLabel.setText("  통신 대기  ")
+            self.ui.commOnLabel.setText("  Wait  ")
             self.ui.commOnLabel.setStyleSheet("QLabel {background-color: grey; color: rgb(243, 243, 243);}")
         
         if self.RM.signals['ego'] == 7 or self.RM.signals['target'] == 7:
@@ -131,7 +151,7 @@ class MyApp(QMainWindow):
     
     def comm_perform_update(self, communication_performance):
         self.ui.cumTimeLabel.setText(str(communication_performance['comulative_time']))
-        self.ui.distanceLabel.setText(str(communication_performance['distance'])+" m")
+        self.ui.distanceLabel.setText(f"{self.RM.target_distance:.1f} m")
         self.ui.rttLabel.setText(str(communication_performance['rtt'])+" ms")
         self.ui.delayLabel.setText(str(communication_performance['delay'])+" ms")
         self.ui.sizeLabel.setText(str(communication_performance['packet_size'])+" byte")
@@ -161,33 +181,77 @@ class MyApp(QMainWindow):
         self.ui.testCase.setText(self.RM.test_case)
 
     def click_new(self):
-        for radio, value in self.radio_point.items():
-            if radio.isChecked():
-                point_num = value
-        with open(f"./yaml/{self.type}_point.yaml", "r") as f:
+        # Get selected scenario from checkbox
+        selected_scenario = None
+        for checkbox, value in self.check_map.items():
+            if checkbox.isChecked():
+                selected_scenario = value
+                break
+
+        if selected_scenario is None:
+            print("No scenario selected")
+            return
+
+        # Build point key based on scenario and test_mode
+        # For CLM scenarios (1-6), use format "CLM{num}_{test_mode}"
+        if selected_scenario <= 6:
+            point_key = f"CLM{selected_scenario}_{self.test_mode}"
+        else:
+            # For ETrA scenarios (7-12), use format "ETrA{num}" (no test_mode)
+            etra_num = selected_scenario - 6  # 7->1, 8->2, ..., 12->6
+            point_key = f"ETrA{etra_num}"
+
+        # Load existing config
+        with open(f"./yamls/{self.type}_point.yaml", "r") as f:
             config = yaml.safe_load(f)
 
-        config[str(point_num)] = {
+        # Save current position
+        config[point_key] = {
             'point': self.RM.ego_pos
         }
 
-        with open(f"./yaml/{self.type}_point.yaml", "w") as f:
+        # Write back to yaml
+        with open(f"./yamls/{self.type}_point.yaml", "w") as f:
             yaml.safe_dump(config, f)
+
         self.RM.publish_plot_point(self.RM.ego_pos)
+        print(f"Saved {self.type} point: {point_key} -> {self.RM.ego_pos}")
 
-    def click_load(self):
-        for radio, value in self.radio_point.items():
-            if radio.isChecked():
-                point_num = value
-        with open(f"./yaml/{self.type}_point.yaml", "r") as f:
-            config = yaml.safe_load(f)
+    def load_and_display_plot_point(self, scenario_num):
+        """Load and display plot point for the selected scenario"""
+        if scenario_num is None:
+            return
         
-        point_config = config.get(str(point_num), config.get("default", {})) 
-        point = point_config['point']
-
-        self.RM.publish_plot_point(point)
-
+        # Build point key based on scenario and test_mode
+        # For CLM scenarios (1-6), use format "CLM{num}_{test_mode}"
+        if scenario_num <= 6:
+            point_key = f"CLM{scenario_num}_{self.test_mode}"
+        else:
+            # For ETrA scenarios (7-12), use format "ETrA{num}" (no test_mode)
+            etra_num = scenario_num - 6  # 7->1, 8->2, ..., 12->6
+            point_key = f"ETrA{etra_num}"
         
+        try:
+            # Load points from yaml
+            with open(f"./yamls/{self.type}_point.yaml", "r") as f:
+                config = yaml.safe_load(f)
+            
+            # Get point for this scenario
+            if point_key in config:
+                point = config[point_key].get('point')
+                if point:
+                    # Publish the plot point
+                    self.RM.publish_plot_point(point)
+                    print(f"Loaded and displayed plot point for {point_key}: {point}")
+                else:
+                    print(f"No point data found for {point_key}")
+            else:
+                print(f"No plot point configured for {point_key}")
+        except FileNotFoundError:
+            print(f"Plot point file not found: ./yamls/{self.type}_point.yaml")
+        except Exception as e:
+            print(f"Error loading plot point: {e}")
+
     def click_signal(self, value):
         self.RM.user_input[1] = value
         self.state = value
@@ -212,39 +276,60 @@ class MyApp(QMainWindow):
             self.mode = 'OFF'
             self.ui.stopButton.setStyleSheet("QPushButton {background-color: red;}")
             self.ui.startButton.setStyleSheet("")  # 기본 스타일로 리셋
-            self.ui.modeLabel.setText("자율주행 OFF")
+            self.ui.modeLabel.setText("ADS OFF")
             self.ui.modeLabel.setStyleSheet("QLabel {background-color: gray; color: black}")
             self.ui.centralwidget.setStyleSheet("")
         elif value == 1:  # startButton 선택
             self.mode = 'ON'
             self.ui.startButton.setStyleSheet("QPushButton {background-color: blue;}")
             self.ui.stopButton.setStyleSheet("")  # 기본 스타일로 리셋
-            self.ui.modeLabel.setText("자율주행 ON")
+            self.ui.modeLabel.setText("ADS ON")
             self.ui.modeLabel.setStyleSheet("QLabel {background-color: #638dff; color: white}")
             self.ui.centralwidget.setStyleSheet("QWidget {background-color: #638dff}")
             
         self.check_timer()
     
     def click_set(self):
-        self.RM.user_input[2] = float(self.ui.velocityBox.value()/3.6)
-        # 체크된 checkbox의 value를 찾고, 해당하는 radio button을 선택
+        # Read test mode from radio buttons
+        for radio, mode_name in self.radio_test_mode.items():
+            if radio.isChecked():
+                self.test_mode = mode_name
+                break
+
+        # Read with_coop (V2V communication) from radio buttons
+        for radio, with_coop_value in self.radio_with_coop.items():
+            if radio.isChecked():
+                self.with_coop = with_coop_value
+                break
+
+        # Read velocity from velocityBox (original behavior)
+        self.RM.user_input[2] = self.ui.velocityBox.value() / 3.6  # km/h → m/s
+
         selected_value = None
         for checkbox, value in self.check_map.items():
             if checkbox.isChecked():
                 self.RM.user_input[3] = value
                 selected_value = value
                 break
-        
-        # 해당하는 radio button을 선택 (체크박스와 라디오 버튼의 번호가 동일하다고 가정)
-        if selected_value is not None:           
-            self.click_load()
+        self.RM.user_input[4] = 0 if self.ui.radioVanilla.isChecked() else 1
+
+        # Publish test_mode and with_coop to ROS
+        # Add WC/WOC prefix to test_mode
+        coop_prefix = "WC" if self.with_coop else "WOC"
+        full_test_mode = f"{coop_prefix}_{self.test_mode}"
+        self.RM.publish_test_mode(full_test_mode)
+        self.RM.publish_with_coop(self.with_coop)
+
+        # Load and display plot point for selected scenario
+        self.load_and_display_plot_point(selected_value)
+
         self.check_timer()
 
     def check_timer(self):
         if not self.sig_in:
             self.sig_in = True
             self.user_input_timer.start(200)
-            QTimer.singleShot(6000, self.stop_user_input_timer)
+            QTimer.singleShot(3000, self.stop_user_input_timer)
         else:
             self.stop_user_input_timer()
     
@@ -252,7 +337,7 @@ class MyApp(QMainWindow):
         if not self.sig_in_viz:
             self.sig_in_viz = True
             self.user_input_viz_timer.start(200)
-            QTimer.singleShot(6000, self.stop_user_input_viz_timer)
+            QTimer.singleShot(4000, self.stop_user_input_viz_timer)
     
     def stop_user_input_timer(self):
         self.sig_in = False
@@ -278,13 +363,9 @@ class MyApp(QMainWindow):
         self.RM.publish()
     
     def on_checkbox_changed(self, checkbox_value):
-        """체크박스 상태가 변경될 때 해당하는 라디오 버튼을 선택"""
-        # 해당하는 라디오 버튼을 선택하고 나머지는 해제
-        for radio, radio_value in self.radio_point.items():
-            if radio_value == checkbox_value:
-                radio.setChecked(True)
-            else:
-                radio.setChecked(False)
+        """체크박스 상태가 변경될 때 호출"""
+        # radioPlot이 제거되었으므로 아무 동작도 하지 않음
+        pass
 
     def state_triggered_viz(self):
         # 신호 값에 따른 색상 매핑
@@ -330,7 +411,6 @@ class MyApp(QMainWindow):
             self.selfdriving_buttons[i].clicked.connect(partial(self.click_selfdriving, int(i)))
         self.ui.setButton.clicked.connect(self.click_set)
         self.ui.newButton.clicked.connect(self.click_new)
-        self.ui.loadButton.clicked.connect(self.click_load)
         for checkbox, value in self.check_map.items():
             checkbox.stateChanged.connect(partial(self.on_checkbox_changed, int(value)))
     
