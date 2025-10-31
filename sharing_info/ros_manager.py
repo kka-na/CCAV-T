@@ -632,17 +632,18 @@ class ROSManager:
         # ego 입장: slower = target 느림(-5), same = 동일, faster = target 빠름(+5)
         # target 입장: slower = ego 빠름(+5), same = 동일, faster = ego 느림(-5)
         speed_offset_map = {
-            'slower': -5.0 if self.type == 'ego' else 5.0,
-            'same': 0.0,
-            'faster': 5.0 if self.type == 'ego' else -5.0,
+            'WC_slower': -5.0 if self.type == 'ego' else 5.0,
+            'WC_same': 0.0,
+            'WC_faster': 5.0 if self.type == 'ego' else -5.0,
+            'WOC_slower': -5.0 if self.type == 'ego' else 5.0,
+            'WOC_same': 0.0,
+            'WOC_faster': 5.0 if self.type == 'ego' else -5.0,
         }
         speed_offset = speed_offset_map.get(self.test_mode, 0.0)
         other_target_velocity = my_target_velocity + speed_offset
-
         # 두 차량 모두 목표 속도 ±1km/h 도달 체크
         my_reached = abs(my_velocity - my_target_velocity) <= 1.0
         other_reached = abs(other_velocity - other_target_velocity) <= 1.0
-
         # CLM3, 4: ego는 target signal을 받은 후에 signal 발송
         if scenario in [3, 4] and self.type == 'ego':
             # Ego는 자신의 속도만 도달하면 되고, target signal을 기다림

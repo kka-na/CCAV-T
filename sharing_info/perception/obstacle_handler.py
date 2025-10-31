@@ -144,7 +144,7 @@ class ObstacleHandler:
                     if s < min_s and -2 < d < 2 :
                         dangerous_id = obj[0]
                         min_s = s
-                obj_with_frenets.append([obj[0],obj[1],obj[2], obj[3], obj[4],obj[5]])
+                obj_with_frenets.append([obj[0],obj[1],obj[2], obj[3], obj[4],obj[5],obj[6]])
             
         return obj_with_frenets, dangerous_id
 

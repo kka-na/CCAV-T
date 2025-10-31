@@ -65,7 +65,7 @@ class LocalPathPlanner:
         self.target_pose = [0,0]
 
         # BSD range: [ts_rear, ts_front, td_min, td_max]
-        self.bsd_range = [-12, 10, 1.5, 6.0]
+        self.bsd_range = [-18, 15, 1.5, 6.0]
         self.extended_range = [-50, 30, 1.5, 6.0]
 
         # Safety thresholds
@@ -554,7 +554,6 @@ class LocalPathPlanner:
         # Caution 계산: ETrA 시나리오(7-12)에서만
         caution = False
         is_etra_scenario = 7 <= self.scenario <= 12
-
         if is_etra_scenario:
             if self.with_coop:
                 # WC 모드: ego만 caution 계산
@@ -563,7 +562,6 @@ class LocalPathPlanner:
             else:
                 # WOC 모드: ego, target 둘 다 caution 계산
                 caution = self.phelper.calc_caution_by_ttc(self.dangerous_obstacle, self.local_pose, self.current_velocity)
-
         # Ego: WC/WOC 모두 BSD 체크 (경로 생성 전)
         bsd = False
         if self.type == 'ego':
