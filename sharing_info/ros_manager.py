@@ -534,7 +534,7 @@ class ROSManager:
         """
         Emergency 발행 - 단순 버전
         """
-        if self.user_input['scenario'] >= 4:
+        if self.user_input['scenario'] >= 7 and self.test_mode.startswith('WC'):
             
             if emergency == 'emergency':
                 # 쿨다운 중이면 무시
